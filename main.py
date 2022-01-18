@@ -24,7 +24,7 @@ def detectNewMinute(dcfpin):
             countZeros = 0
         sleep_ms(100 + delta)
         t += 100
-        if countZeros >= 13:
+        if countZeros >= 11:
             print("No Amplitude Modulation for 13 or more consecutive readings. Must be 59 seconds")
             return True
 
@@ -71,11 +71,11 @@ def computeTime(rtc,dcf):
                 print("Error: check bits")
                 #break
                 return True
-            if (arraysumpart(timeInfo,21,28) % 2 != 0) or (arraysumpart(timeInfo,29,35)% 2 != 0) or (arraysumpart(timeInfo,36,58)% 2 != 0) :
+            if (arraysumpart(timeInfo,21,29) % 2 != 0) or (arraysumpart(timeInfo,29,36)% 2 != 0) or (arraysumpart(timeInfo,36,59)% 2 != 0) :
                 print("Error: parity")
-                print (timeInfo[21:28])
-                print (timeInfo[29:35])
-                print (timeInfo[36:58])
+                print (timeInfo[21:29])
+                print (timeInfo[29:36])
+                print (timeInfo[36:59])
                 # break
                 # return True
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27] - 1 # warum -1 ???
