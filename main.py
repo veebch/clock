@@ -14,7 +14,7 @@ def detectNewMinute(dcfpin):
     start = ticks_ms()
     while True:
         v = dcfpin.value()
-        print("Zeroes %d: signal %d (~ time %f s) max zeros %d" % (countZeros,v,t/1000.0,mx))
+        #print("Zeroes %d: signal %d (~ time %f s) max zeros %d" % (countZeros,v,t/1000.0,mx))
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
             countZeros += 1
@@ -78,14 +78,19 @@ def computeTime(rtc,dcf):
                 print (timeInfo[36:59])
                 # break
                 # return True
-            minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27] - 1 # warum -1 ???
+            minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
             tag       =  timeInfo[36] + 2 * timeInfo[37] + 4 * timeInfo[38] + 8 * timeInfo[39] + 10 * timeInfo[40] + 20 * timeInfo[41]
             wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
             monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
-            print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, secs, 0))
-            rtc.datetime((2000+jahr, monat, tag, wochentag, stunde, minute, secs, 0))
+            #Now wait for change in minute and set rtc
+            print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))
+            # Now wait for trigger to set rtc
+            loop=True
+            while loop:
+                loop = not detectNewMinute(dcf)
+            rtc.datetime((2000+jahr, monat, tag, wochentag, stunde, minute, 0  , 0))
             print(rtc.datetime())
             #break
             return False
