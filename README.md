@@ -6,10 +6,10 @@ Getting a Pico and a DCF77 receiver to power a handsome old clock
 
 # Hardware
 
-DCF77
-Pi Pico
-Clock
-24V power supply to run the clock and supply the pulse
+- DCF77
+- Pi Pico
+- Clock
+- 24V power supply to run the clock and supply the pulse
 
 # Code used
 
