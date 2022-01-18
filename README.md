@@ -10,4 +10,4 @@ The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://git
 
 # Licence 
 
-GPL 3.O
+GPL 3.0
