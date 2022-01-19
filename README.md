@@ -13,7 +13,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - DCF77 receiver
 - Pi Pico
 - Real Time Clock (backup for radio signal issues)
-- 24V step up
+- 3.3V to 24V step up board
 - H bridge
 
 # Code used
