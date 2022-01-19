@@ -15,6 +15,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - Slave Clock
 - Real Time Clock (backup for radio signal issues)
 - 24V step up
+- H bridge
 
 # Code used
 
