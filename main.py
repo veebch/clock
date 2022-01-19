@@ -4,17 +4,20 @@
 
 from machine import Pin, Signal, RTC
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
+from math import ceil, floor
 
 # Loops until a new minute is detected
 def detectNewMinute(dcfpin):
-    print("in detectNewMinute")
+    print("in detectNewMinute.. waiting")
     countZeros = 0
     mx = 0
     t = 0
+    sleeptime = 50
     start = ticks_ms()
+    breakat = ceil(1000/sleeptime) + 1
     while True:
         v = dcfpin.value()
-        print("Zeroes %d: signal %d (~ time %f s) max zeros %d" % (countZeros,v,t/1000.0,mx))
+        # print("Zeroes %d: signal %d, max zeros %d" % (countZeros,v,mx))
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
             countZeros += 1
@@ -22,10 +25,10 @@ def detectNewMinute(dcfpin):
                 mx = countZeros
         else:
             countZeros = 0
-        sleep_ms(100 + delta)
-        t += 100
-        if countZeros >= 15:
-            print("No Amplitude Modulation for 15 or more consecutive readings. Must be 59 seconds")
+        sleep_ms(sleeptime + delta)
+        t += sleeptime
+        if countZeros >= breakat:
+            print("No Amplitude Modulation for "+str(breakat)+" or more consecutive readings. Must be 59 seconds")
             return True
 
 # returns weekday that corresponds to i or "Invalid day of week"
@@ -40,32 +43,34 @@ def weekday(i):
                 7:'Sunday'
              }
         return switcher.get(i,"Invalid day of week")
-
+ 
 # decodes the received signal into a time and sets rtc to it
 def computeTime(rtc,dcf):
-    print("in computeTime")
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
-    a = [0] * 7
+    samplespeed = 10                               # time between samples (ms)
+    samples = floor(1000/samplespeed * .25)        # sample points
+    a = [0] * samples
     secs, bitNum, cnt = 0, 0, 0
     timeInfo = []
     start = ticks_ms()
-    print("bitNum: value")
+    noisethreshms = 50
+    zerothreshms = 140
+    print("In computeTime: ",samples," samples.",1000/samplespeed," samples a second. 100ms would be ", str(floor(.1*1000/samplespeed))," 200ms would be ",str(floor(.2*1000/samplespeed)))
     while True:
-        delta = cnt * 50 - ticks_diff(ticks_ms(), start)
+        delta = cnt * samplespeed - ticks_diff(ticks_ms(), start)
+        #print ("delta ms:"+str(delta))
         a.pop(0)
         a.append(dcf.value())
-        if a == [0,1,1,1,1,1,0] or a == [0,1,1,1,1,0,0]:
-             timeInfo.append(1)
-             print("%d: 1" % bitNum)
-             bitNum += 1
-             secs += 1
-             #print(rtc.datetime())
-        elif a == [0,1,1,0,0,0,0] or a == [0,1,1,1,0,0,0]:
-             timeInfo.append(0)
-             print("%d: 0" % bitNum)
-             bitNum += 1
-             secs += 1
-             #print(rtc.datetime())
+        if  a[0]==0 and a[1] == 1:
+            print(bitNum,a, sum(a))
+            if sum(a) > 1000/samplespeed * noisetheshms/1000:      # Anything less than 50 ms is considered noise
+                if sum(a) < 1000/samplespeed * zerotheshms/1000:   # Anything less than 140 ms is a zero
+                    timeInfo.append(0)
+                    print ("ZERO")
+                else:
+                    timeInfo.append(1)
+                    print ("ONE")
+                bitNum += 1
         if bitNum == 59:
             if timeInfo[0] != 0 or timeInfo[20] != 1:
                 print("Error: check bits")
@@ -77,7 +82,7 @@ def computeTime(rtc,dcf):
                 print (timeInfo[29:36])
                 print (timeInfo[36:59])
                 # break
-                # return True
+                return True
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
             tag       =  timeInfo[36] + 2 * timeInfo[37] + 4 * timeInfo[38] + 8 * timeInfo[39] + 10 * timeInfo[40] + 20 * timeInfo[41]
@@ -94,7 +99,7 @@ def computeTime(rtc,dcf):
             print(rtc.datetime())
             #break
             return False
-        sleep_ms(50 + delta)
+        sleep_ms(samplespeed + delta)
         cnt += 1
         
 def arraysumpart(arr, fromindex, toindex):
