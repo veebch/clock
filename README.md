@@ -21,6 +21,14 @@ The code works in two basic steps:
 
 An alternive would be to listen for a minute, use the 59th second to rearrange the signal and then clean and decode. 
 
+# Getting things up and running
+
+Assemble the Pico, step up transformer and H bridge. Note that the voltage of the step up tranformer may vary depending on the clock you're using.
+
+Copy the files from this repository to your pico using Thonny
+
+Edit the file firstruntime.txt to the time that the clock is showing before the first run. This *should* be the only time you need to do this.
+
 # Licence 
 
 GPL 3.0
