@@ -6,6 +6,7 @@ from machine import Pin, Signal, RTC
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 
+
 # Loops until a new minute is detected
 def detectNewMinute(dcfpin):
     print("in detectNewMinute.. waiting")
@@ -43,11 +44,24 @@ def weekday(i):
                 7:'Sunday'
              }
         return switcher.get(i,"Invalid day of week")
- 
+
+def atobar(a, val):
+    stringa=''
+    if val==0:
+        block = '▒'
+    else:
+        block = '█'
+    for i in range (1,len(a)):
+        if a[i]==1:
+            stringa += block
+        else:
+            stringa += ' '
+    return stringa
+
 # decodes the received signal into a time and sets rtc to it
 def computeTime(rtc,dcf):
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
-    samplespeed = 10                               # time between samples (ms)
+    samplespeed = 5                                 # time between samples (ms)
     samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
     a = [0] * samples
     secs, bitNum, cnt = 0, 0, 0
@@ -55,21 +69,22 @@ def computeTime(rtc,dcf):
     start = ticks_ms()
     noisethreshms = 40
     zerothreshms = 180
-    print("In computeTime: ",samples," samples.",1000/samplespeed," samples a second. 100ms would be ", str(floor(.1*1000/samplespeed)),"samples. 200ms would be ",str(floor(.2*1000/samplespeed)))
+    print("Computing time:",samples,"samples @",1000/samplespeed,"samples a second. 100ms would be", str(floor(.1*1000/samplespeed)),"samples. 200ms would be",str(floor(.2*1000/samplespeed)))
+    print("Bars show 0 as space and 1 as solid. If signal is classified as ONE then █, if ZERO ▒") 
     while True:
         delta = cnt * samplespeed - ticks_diff(ticks_ms(), start)
         #print ("delta ms:"+str(delta))
         a.pop(0)
         a.append(dcf.value())
-        if  a[0]==0 and a[1]==1 and sum(a[0:10]) > 7:
-            print(bitNum,a, sum(a))
+        if  a[0]==0 and a[1]==1 and sum(a[0:10]) > 7:               # first element 0 second 1 and first 10 has more than 7 ones (remove hardcoding)
+            
             if sum(a) > 1000/samplespeed * noisethreshms/1000:      # Anything less than 50 ms is considered noise
                 if sum(a) <= 1000/samplespeed * zerothreshms/1000:   # Anything less than 140 ms is a zero
                     timeInfo.append(0)
-                    print ("ZERO")
                 else:
                     timeInfo.append(1)
-                    print ("ONE")
+                bar= atobar(a,timeInfo[bitNum])   
+                print(str(bitNum) + '\t'+ bar)
                 bitNum += 1
         if bitNum == 59:
             if timeInfo[0] != 0 or timeInfo[20] != 1:
