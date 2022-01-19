@@ -4,6 +4,10 @@
 
 Getting a Pico and a DCF77 receiver to power a handsome old clock
 
+The DCF77 signal is a radio signal that carries information from an Atomic Clock.
+
+![Signal range](https://en.wikipedia.org/wiki/DCF77#/media/File:Dcf_weite.jpg)
+
 # Hardware
 
 - DCF77
