@@ -1,8 +1,8 @@
-# Micropython script to set rtc-time to time from
+
 # DCF1 receiver module https://www.pollin.de/p/dcf-77-empfangsmodul-dcf1-810054?gclid=EAIaIQobChMIpdOkt7bK5wIViM13Ch0Tsw1dEAQYASABEgKgafD_BwE
 # DCF1 module receives DCF77 signal, see https://en.wikipedia.org/wiki/DCF77
 
-from machine import Pin, Signal, RTC
+from machine import Pin, Signal
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 
@@ -58,8 +58,8 @@ def atobar(a, val):
             stringa += ' '
     return stringa
 
-# decodes the received signal into a time and sets rtc to it
-def computeTime(rtc,dcf):
+# decodes the received signal into a time 
+def computeTime(dcf):
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 5                                 # time between samples (ms)
     samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
@@ -101,14 +101,14 @@ def computeTime(rtc,dcf):
             wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
             monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
-            #Now wait for change in minute and set rtc
+            #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))
-            # Now wait for minute trigger to set rtc
+            # Now wait for minute trigger to set time
             loop=True
             while loop:
                 loop = not detectNewMinute(dcf)
-            rtc.datetime((2000+jahr, monat, tag, wochentag, stunde, minute, 0  , 0))
-            print(rtc.datetime())
+            radiotime=(2000+jahr, monat, tag, wochentag, stunde, minute, 0  , 0)
+            print(radiotime)
             #break
             return False
         sleep_ms(samplespeed + delta)
@@ -129,10 +129,8 @@ pon_pin = Pin(16, Pin.OUT) #D5
 # dcf1
 dcf = Pin(15, Pin.IN,Pin.PULL_DOWN) 
 
-# real time clock
-rtc = RTC()
 
 cnd = True
 while cnd:
     if detectNewMinute(dcf):
-        cnd = computeTime(rtc,dcf)
+        cnd = computeTime(dcf)
