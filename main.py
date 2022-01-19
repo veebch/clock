@@ -101,13 +101,19 @@ def computeTime(dcf):
             wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
             monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
+            if timeInfo[17]==1:
+                season='CEST'
+            elif timeInfo[18]==1:
+                season='CET'
+            else:
+                return True
             #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))
             # Now wait for minute trigger to set time
             loop=True
             while loop:
                 loop = not detectNewMinute(dcf)
-            radiotime=(2000+jahr, monat, tag, wochentag, stunde, minute, 0  , 0)
+            radiotime=(2000+jahr, monat, tag, wochentag, stunde, minute, season)
             print(radiotime)
             #break
             return False
