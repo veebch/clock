@@ -9,7 +9,7 @@ from math import ceil, floor
 
 # Loops until a new minute is detected
 def detectNewMinute(dcfpin):
-    print("in detectNewMinute.. waiting")
+    print("Waiting for 59th second until listening to signal")
     countZeros = 0
     mx = 0
     t = 0
@@ -29,7 +29,7 @@ def detectNewMinute(dcfpin):
         sleep_ms(sleeptime + delta)
         t += sleeptime
         if countZeros >= breakat:
-            print("No Amplitude Modulation for "+str(breakat)+" or more consecutive readings. Must be 59 seconds")
+            print("No Amplitude Modulation for "+str(breakat)+" consecutive readings. Must be 59 seconds")
             return True
 
 # returns weekday that corresponds to i or "Invalid day of week"
@@ -91,11 +91,8 @@ def computeTime(rtc,dcf):
                 print("Error: check bits")
                 #break
                 return True
-            if (arraysumpart(timeInfo,21,29) % 2 != 0) or (arraysumpart(timeInfo,29,36)% 2 != 0) or (arraysumpart(timeInfo,36,59)% 2 != 0) :
+            if (arraysumpart(timeInfo,21,29) % 2 == 1) or (arraysumpart(timeInfo,29,36)% 2 == 1) or (arraysumpart(timeInfo,36,59)% 2 == 1) :
                 print("Error: parity")
-                print (timeInfo[21:29])
-                print (timeInfo[29:36])
-                print (timeInfo[36:59])
                 # break
                 return True
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
