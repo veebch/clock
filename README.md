@@ -9,10 +9,9 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 (The US uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal)
 
 # Hardware
-
-- DCF77
+- Old 'nebenuhr' clock with secondary mechanism (controlled by pulses from the mother-clock)
+- DCF77 receiver
 - Pi Pico
-- Slave Clock
 - Real Time Clock (backup for radio signal issues)
 - 24V step up
 - H bridge
