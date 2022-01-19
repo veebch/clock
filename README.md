@@ -15,6 +15,12 @@ Getting a Pico and a DCF77 receiver to power a handsome old clock
 
 The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is beautifully readable.
 
+The code works in two basic steps:
+- Listen until the quiet 59th second
+- Listen and decode
+
+An alternive would be to listen for a minute, use the 59th second to rearrange the signal and then clean and decode. 
+
 # Licence 
 
 GPL 3.0
