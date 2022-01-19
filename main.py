@@ -48,23 +48,23 @@ def weekday(i):
 def computeTime(rtc,dcf):
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 10                               # time between samples (ms)
-    samples = floor(1000/samplespeed * .25)        # sample points
+    samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
     a = [0] * samples
     secs, bitNum, cnt = 0, 0, 0
     timeInfo = []
     start = ticks_ms()
-    noisethreshms = 50
-    zerothreshms = 140
-    print("In computeTime: ",samples," samples.",1000/samplespeed," samples a second. 100ms would be ", str(floor(.1*1000/samplespeed))," 200ms would be ",str(floor(.2*1000/samplespeed)))
+    noisethreshms = 40
+    zerothreshms = 180
+    print("In computeTime: ",samples," samples.",1000/samplespeed," samples a second. 100ms would be ", str(floor(.1*1000/samplespeed)),"samples. 200ms would be ",str(floor(.2*1000/samplespeed)))
     while True:
         delta = cnt * samplespeed - ticks_diff(ticks_ms(), start)
         #print ("delta ms:"+str(delta))
         a.pop(0)
         a.append(dcf.value())
-        if  a[0]==0 and a[1] == 1:
+        if  a[0]==0 and a[1]==1 and sum(a[0:10]) > 7:
             print(bitNum,a, sum(a))
-            if sum(a) > 1000/samplespeed * noisetheshms/1000:      # Anything less than 50 ms is considered noise
-                if sum(a) < 1000/samplespeed * zerotheshms/1000:   # Anything less than 140 ms is a zero
+            if sum(a) > 1000/samplespeed * noisethreshms/1000:      # Anything less than 50 ms is considered noise
+                if sum(a) <= 1000/samplespeed * zerothreshms/1000:   # Anything less than 140 ms is a zero
                     timeInfo.append(0)
                     print ("ZERO")
                 else:
