@@ -14,7 +14,7 @@ def detectNewMinute(dcfpin):
     start = ticks_ms()
     while True:
         v = dcfpin.value()
-        #print("Zeroes %d: signal %d (~ time %f s) max zeros %d" % (countZeros,v,t/1000.0,mx))
+        print("Zeroes %d: signal %d (~ time %f s) max zeros %d" % (countZeros,v,t/1000.0,mx))
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
             countZeros += 1
@@ -24,8 +24,8 @@ def detectNewMinute(dcfpin):
             countZeros = 0
         sleep_ms(100 + delta)
         t += 100
-        if countZeros >= 11:
-            print("No Amplitude Modulation for 13 or more consecutive readings. Must be 59 seconds")
+        if countZeros >= 15:
+            print("No Amplitude Modulation for 15 or more consecutive readings. Must be 59 seconds")
             return True
 
 # returns weekday that corresponds to i or "Invalid day of week"
@@ -86,7 +86,7 @@ def computeTime(rtc,dcf):
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
             #Now wait for change in minute and set rtc
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))
-            # Now wait for trigger to set rtc
+            # Now wait for minute trigger to set rtc
             loop=True
             while loop:
                 loop = not detectNewMinute(dcf)
@@ -110,7 +110,7 @@ pon_pin = Pin(16, Pin.OUT) #D5
 #pon_pin.off()
 
 # dcf1
-dcf = Pin(15, Pin.IN,Pin.PULL_UP) 
+dcf = Pin(15, Pin.IN,Pin.PULL_DOWN) 
 
 # real time clock
 rtc = RTC()
