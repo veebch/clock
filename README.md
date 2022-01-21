@@ -2,7 +2,7 @@
 
 # Clock
 
-Getting a Pico and a DCF77 receiver to power a handsome old clock and make it super-accurate without a sniff of internet.
+Getting a Pico and a DCF77 receiver to power a handsome old clock and make it super-accurate, without a sniff of internet.
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years. 
 
