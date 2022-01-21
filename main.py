@@ -18,7 +18,7 @@ def detectNewMinute(dcfpin):
     breakat = ceil(1000/sleeptime) + 1
     while True:
         v = dcfpin.value()
-        # print("Zeroes %d: signal %d, max zeros %d" % (countZeros,v,mx))
+        #print("Zeroes %d: signal %d, max zeros %d" % (countZeros,v,mx))
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
             countZeros += 1
@@ -88,7 +88,7 @@ def computeTime(dcf):
                 bitNum += 1
         if bitNum == 59:
             if timeInfo[0] != 0 or timeInfo[20] != 1:
-                print("Error: check bits")
+                print("Error: Check bits not set to correct value")
                 #break
                 return True
             if (arraysumpart(timeInfo,21,29) % 2 == 1) or (arraysumpart(timeInfo,29,36)% 2 == 1) or (arraysumpart(timeInfo,36,59)% 2 == 1) :
@@ -133,10 +133,15 @@ pon_pin = Pin(16, Pin.OUT) #D5
 #pon_pin.off()
 
 # dcf1
-dcf = Pin(15, Pin.IN,Pin.PULL_DOWN) 
+dcf = Pin(26, Pin.IN,Pin.PULL_DOWN) 
 
 
-cnd = True
-while cnd:
+while True:
     if detectNewMinute(dcf):
         cnd = computeTime(dcf)
+        # advance clock every minute according to rtc
+        # Write time to file
+        
+        # Once a day, start a thread to update the RTC according to the DCF77 signal
+        # apply a correction if needed. 
+
