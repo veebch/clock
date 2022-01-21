@@ -23,7 +23,13 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 
 Assemble the Pico, step up transformer and H bridge. Note that the voltage of the step up tranformer may vary depending on the clock you're using. 
 
-Copy the files from this repository to your pico using ampy:
+Copy the files from this repository
+
+      git clone https://github.com/veebch/clock
+
+then send them your Pico using ampy
+   
+      sudo ampy -p /dev/ttyACM0 put ./
 
 Edit the file firstruntime.txt to the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code should be able to keep track of time after power-off after this.
 
