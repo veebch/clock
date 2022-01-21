@@ -30,7 +30,7 @@ Edit the file firstruntime.txt to the time that the clock is showing before the 
 
 # Code used
 
-The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is very readable.
+The DCF77 part of the code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1).
 
 # Licence 
 
