@@ -2,33 +2,31 @@
 
 # Clock
 
-Getting a Pico and a DCF77 receiver to power a handsome old clock
+Getting a Pico and a DCF77 receiver to power a handsome old clock.
 
-The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from an Atomic Clock. The signal pretty much covers Europe.
+The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years. 
 
-(The US uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal)
+(The US uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal, adding other signals is on the to-do list)
 
 # Hardware
-- Old 'nebenuhr' clock with secondary mechanism (controlled by pulses from the mother-clock)
-- DCF77 receiver
-- Pi Pico
-- Real Time Clock (backup for radio signal issues)
+- Old 'nebenuhr' clock with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
+- A ferrite receiver (for DCF77 signal)
+- A Microcontroller (Raspberry Pi Pico)
+- Real Time Clock (backup for any radio signal issues)
 - 3.3V to 24V step up board
-- H bridge
+- H bridge (for the polarity switch that triggers the clock mechanism)
 
 # Code used
 
-The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is beautifully readable.
+The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is very readable.
 
-The code works in two basic steps:
-- Listen until the quiet 59th second
-- Listen and decode
+# Video
 
-An alternative would be to listen for a minute, use the 59th second to rearrange the signal and then clean and decode. 
+
 
 # Getting things up and running
 
-Assemble the Pico, step up transformer and H bridge. Note that the voltage of the step up tranformer may vary depending on the clock you're using.
+Assemble the Pico, step up transformer and H bridge. Note that the voltage of the step up tranformer may vary depending on the clock you're using. 
 
 Copy the files from this repository to your pico using ampy:
 
