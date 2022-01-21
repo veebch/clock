@@ -6,7 +6,7 @@ Getting a Pico and a DCF77 receiver to power a handsome old clock.
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years. 
 
-(The US uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal, adding other signals is on the to-do list)
+(The United States uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal, adding other signals is on the to-do list)
 
 # Hardware
 - Old 'nebenuhr' clock with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
