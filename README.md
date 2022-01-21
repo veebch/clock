@@ -16,12 +16,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - 3.3V to 24V step up board
 - H bridge (for the polarity switch that triggers the clock mechanism)
 
-# Code used
-
-The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is very readable.
-
 # Video
-
 
 
 # Getting things up and running
@@ -31,6 +26,11 @@ Assemble the Pico, step up transformer and H bridge. Note that the voltage of th
 Copy the files from this repository to your pico using ampy:
 
 Edit the file firstruntime.txt to the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code should be able to keep track of time after power-off after this.
+
+
+# Code used
+
+The DCF77 code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1](https://github.com/demogorgi/set-rtc-using-dcf77-via-dcf1). It relies on a clean DCF77 signal, but is very readable.
 
 # Licence 
 
