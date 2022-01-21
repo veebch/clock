@@ -31,8 +31,7 @@ then send them your Pico using ampy
    
       sudo ampy -p /dev/ttyACM0 put ./
 
-Edit the file firstruntime.txt to the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code should be able to keep track of time after power-off after this.
-
+Edit the file `firstruntime.txt` to show the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code will keep track of time after power-off.
 
 # Code used
 
