@@ -11,8 +11,8 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 # Hardware
 - Old 'nebenuhr' clock with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
 - A ferrite receiver (for DCF77 signal)
-- A Microcontroller (Raspberry Pi Pico)
-- Real Time Clock (backup for any radio signal issues)
+- A microcontroller (Raspberry Pi Pico)
+- Real time clock (RTC) (backup for any radio signal issues)
 - 3.3V to 24V step up board
 - H bridge (for the polarity switch that triggers the clock mechanism)
 
