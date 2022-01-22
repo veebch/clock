@@ -9,6 +9,7 @@ from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
 
+
 # Loops until a new minute is detected TODO - Signal Quality Metric to LED
 def detectNewMinute(dcfpin):
     print("Waiting for 59th second until listening to signal")
@@ -213,11 +214,10 @@ if __name__ == '__main__':
     # Initialise DCF77 receiver and Real Time Clock
     dcf = Pin(26, Pin.IN,Pin.PULL_DOWN) 
     rtc = ds3231(I2C_PORT,I2C_SCL,I2C_SDA)
-
+    print("RTC reads:")
+    rtc.read_time()
     while True:
-        print("RTC reads:")
-        rtc.read_time()
-        # run this once a day - update rtc an apply correction if needed
+        # run this once a day at 3am - update rtc and apply correction if needed
         if detectNewMinute(dcf):
             radiotime = computeTime(dcf)
             if radiotime != 'failed':
@@ -225,12 +225,11 @@ if __name__ == '__main__':
                 rtc.set_time(radiotime)
                 print("Got ourselves a radiotime")
                 rtc.read_time()
-            # advance clock every minute according to rtc
-            # Write time to file
-        
+    
             # Once a day, start a thread to update the RTC according to the DCF77 signal
             # apply a correction if needed. 
         # Every minute, according to RTC, pulse to clock.
+        # Write time to file after pulse
         
  
 
