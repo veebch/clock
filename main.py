@@ -217,6 +217,7 @@ if __name__ == '__main__':
     while True:
         print("RTC reads:")
         rtc.read_time()
+        # run this once a day - update rtc an apply correction if needed
         if detectNewMinute(dcf):
             radiotime = computeTime(dcf)
             if radiotime != 'failed':
@@ -229,7 +230,8 @@ if __name__ == '__main__':
         
             # Once a day, start a thread to update the RTC according to the DCF77 signal
             # apply a correction if needed. 
-            
+        # Every minute, according to RTC, pulse to clock.
+        
  
 
 
