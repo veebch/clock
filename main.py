@@ -9,7 +9,7 @@ from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
 
-# Loops until a new minute is detected
+# Loops until a new minute is detected TODO - Signal Quality Metric to LED
 def detectNewMinute(dcfpin):
     print("Waiting for 59th second until listening to signal")
     countZeros = 0
@@ -20,7 +20,7 @@ def detectNewMinute(dcfpin):
     breakat = ceil(1000/sleeptime) + 1
     while True:
         v = dcfpin.value()
-        #print("Zeroes %d: signal %d, max zeros %d" % (countZeros,v,mx))
+        print("%d" % (v), end="")
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
             countZeros += 1
@@ -99,6 +99,7 @@ def computeTime(dcf):
                 # break
                 return radiotime
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
+            
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
             tag       =  timeInfo[36] + 2 * timeInfo[37] + 4 * timeInfo[38] + 8 * timeInfo[39] + 10 * timeInfo[40] + 20 * timeInfo[41]
             wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
@@ -111,15 +112,12 @@ def computeTime(dcf):
             else:
                 return radiotime
             #Now wait for change in minute
-            print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))
-            # Now wait for minute trigger to set time
-            loop=True
-            while loop:
-                loop = not detectNewMinute(dcf)
-            radiotime= stunde + ":" minute + ":" + "00," + wochentag +","str(2000+jahr)+ '-'+ str(monat) + '-' +str(tag)
+            print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
+            radiotime= twodigits(str(stunde))+ ":" + twodigits(str(minute)) + ":00," + str(weekday(wochentag)) + "," + str(2000+jahr) + '-' + twodigits(str(monat))+ '-' + twodigits(str(tag))
             #rtc.set_time('13:45:50,Monday,2021-05-24')
-            print(radiotime)
-            #break
+            # print(radiotime)
+            # sleep for 1 second and break
+            sleep(1)
             return radiotime
         sleep_ms(samplespeed + delta)
         cnt += 1
@@ -130,6 +128,10 @@ def arraysumpart(arr, fromindex, toindex):
         sum += arr[i]
     return int(sum)
 
+def twodigits(str):
+    if len(str)==1:
+        str= "0"+str
+    return str
 
 class ds3231(object):
 #            13:45:00 Mon 24 May 2021
@@ -213,11 +215,15 @@ if __name__ == '__main__':
     rtc = ds3231(I2C_PORT,I2C_SCL,I2C_SDA)
 
     while True:
+        print("RTC reads:")
+        rtc.read_time()
         if detectNewMinute(dcf):
             radiotime = computeTime(dcf)
             if radiotime != 'failed':
-                rtc.set_time('13:45:50,Monday,2021-05-24')
-                # rtc.set_time('13:45:50,Monday,2021-05-24')
+                print(radiotime)
+                rtc.set_time(radiotime)
+                print("Got ourselves a radiotime")
+                rtc.read_time()
             # advance clock every minute according to rtc
             # Write time to file
         
