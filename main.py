@@ -8,9 +8,10 @@ from machine import Pin, I2C
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
+import uasyncio
 
 
-# Loops until a new minute is detected TODO - Signal Quality Metric to LED
+# Loops until a new minute is detected 
 def detectNewMinute(dcfpin):
     print("Waiting for 59th second until listening to signal")
     countZeros = 0
@@ -183,6 +184,21 @@ class ds3231(object):
         now_time = binascii.unhexlify((second + " " + minute + " " + hour +  " " + date).replace(' ',''))
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
+    
+def pulseminute(timestring,a,b):
+    clockenable1.value(1)
+    a = not a
+    b = not b
+    clock1(int(a))
+    clock2(int(b))
+    sleep_ms(300)
+    # turn the minute motor off and then return the last values
+    clockenable1.value(0)
+    strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
+    file = open ("lastpulseat.txt", "w")
+    file.write(strngtofile)
+    file.close()
+    return a
 
 #----------------MAIN LOGIC
 
@@ -195,7 +211,7 @@ if __name__ == '__main__':
     I2C_SDA = 6
     I2C_SCL = 7
 
-    #    The new versions of three rtc uses i2c0. If you get dont work,try to comment the i2c1 lines and uncomment the i2c0
+    #    The new versions of the rtc uses i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
 
     #I2C_PORT = 0
     #I2C_SDA = 20
@@ -205,30 +221,41 @@ if __name__ == '__main__':
     #----------- END RTC PIN ALLOCATION
     
     # to wake up dcf1 
-    pon_pin = Pin(16, Pin.OUT) #D5
+    pon_pin = Pin(16, Pin.OUT) 
 
     # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
-    dcf = Pin(26, Pin.IN,Pin.PULL_DOWN)
-    rtc = ds3231(I2C_PORT,I2C_SCL,I2C_SDA)
+    dcf = Pin(26, Pin.IN)
+    rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
     clock4 = Pin(13, Pin.OUT) # Toggle polarity to advance minute YELLOW
     clock3 = Pin(12, Pin.OUT) # Toggle polarity to advance minute ORANGE
     clock2 = Pin(11, Pin.OUT) # Driving the seconds hand BLUE
     clock1 = Pin(9, Pin.OUT) # Driving the seconds hand GREEN
-    clockenable1 = Pin(14, Pin.OUT) # Driving the seconds hand WHITE
-    clockenable1.value(1)
+    clockenable1 = Pin(14, Pin.OUT) # Driving the minute hand WHITE
+    clockenable2 = Pin(18, Pin.OUT) # Driving the seconds hand PURPLE
     print("RTC reads:")
     rtc.read_time()
+    # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
+    # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
+    # is to attach a switch to give a 1 minute nudge if needed.
+    a = True
+    b = False
+    clockenable2(1)
+    clock1(1)
+    clock2(0)
     while True:
-        # run this once a day at 3am - update rtc and apply correction if needed
+        # run this once a day - update rtc 
         if detectNewMinute(dcf):
             radiotime = computeTime(dcf)
             if radiotime != 'failed':
                 print(radiotime)
+                # calculate the difference between radiotime and rtc
                 rtc.set_time(radiotime)
                 print("Got ourselves a radiotime")
                 ledPin.value(1)
                 rtc.read_time()
+                a = pulseminute(radiotime,a,b)
+                b = not a
             else:
                 print('Radio Time Fail')
                 ledPin.value(0)
