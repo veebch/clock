@@ -90,12 +90,14 @@ def computeTime(dcf):
                 bar= atobar(a,timeInfo[bitNum])   
                 print(str(bitNum) + '\t'+ bar)
                 bitNum += 1
+                # Flash LED while getting radio signal
+                ledPin.toggle()
         if bitNum == 59:
             if timeInfo[0] != 0 or timeInfo[20] != 1:
                 print("Error: Check bits not set to correct value")
                 #break
                 return radiotime
-            if (arraysumpart(timeInfo,21,29) % 2 == 1) or (arraysumpart(timeInfo,29,36)% 2 == 1) or (arraysumpart(timeInfo,36,59)% 2 == 1) :
+            if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
                 print("Error: parity")
                 # break
                 return radiotime
@@ -122,12 +124,6 @@ def computeTime(dcf):
             return radiotime
         sleep_ms(samplespeed + delta)
         cnt += 1
-        
-def arraysumpart(arr, fromindex, toindex):
-    sum=0
-    for i in range(fromindex, toindex):
-        sum += arr[i]
-    return int(sum)
 
 def twodigits(str):
     if len(str)==1:
@@ -199,7 +195,7 @@ if __name__ == '__main__':
     I2C_SDA = 6
     I2C_SCL = 7
 
-    #    The new versions of the rtc uses i2c0. If you get dont work,try to comment the i2c1 lines and uncomment the i2c0
+    #    The new versions of three rtc uses i2c0. If you get dont work,try to comment the i2c1 lines and uncomment the i2c0
 
     #I2C_PORT = 0
     #I2C_SDA = 20
@@ -211,9 +207,16 @@ if __name__ == '__main__':
     # to wake up dcf1 
     pon_pin = Pin(16, Pin.OUT) #D5
 
-    # Initialise DCF77 receiver and Real Time Clock
-    dcf = Pin(26, Pin.IN,Pin.PULL_DOWN) 
+    # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
+    dcf = Pin(26, Pin.IN,Pin.PULL_DOWN)
     rtc = ds3231(I2C_PORT,I2C_SCL,I2C_SDA)
+    ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
+    clock4 = Pin(13, Pin.OUT) # Toggle polarity to advance minute YELLOW
+    clock3 = Pin(12, Pin.OUT) # Toggle polarity to advance minute ORANGE
+    clock2 = Pin(11, Pin.OUT) # Driving the seconds hand BLUE
+    clock1 = Pin(9, Pin.OUT) # Driving the seconds hand GREEN
+    clockenable1 = Pin(14, Pin.OUT) # Driving the seconds hand WHITE
+    clockenable1.value(1)
     print("RTC reads:")
     rtc.read_time()
     while True:
@@ -224,8 +227,11 @@ if __name__ == '__main__':
                 print(radiotime)
                 rtc.set_time(radiotime)
                 print("Got ourselves a radiotime")
+                ledPin.value(1)
                 rtc.read_time()
-    
+            else:
+                print('Radio Time Fail')
+                ledPin.value(0)
             # Once a day, start a thread to update the RTC according to the DCF77 signal
             # apply a correction if needed. 
         # Every minute, according to RTC, pulse to clock.
