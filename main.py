@@ -189,11 +189,11 @@ class ds3231(object):
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
     
-def pulseminute(timestring,a,b,offset):
+def pulseminute(timestringa,a,b,offset):
     while offset>0:
         print('PULSE 1 min')
         clockenable1.value(1)
-        a = not a
+        a = not a # Reverse po
         b = not b
         clock1(int(a))
         clock2(int(b))
@@ -206,6 +206,12 @@ def pulseminute(timestring,a,b,offset):
         file.close()
         offset = offset - 1
     return a, b
+
+def getlastpulse():
+    with open('lastpulseat.txt') as f:
+        lines = f.readlines()
+    f.close()
+    return lines
 
 def minutestoday(timestring):
     breakuptime =timestring.split(":") 
@@ -239,30 +245,28 @@ if __name__ == '__main__':
     dcf = Pin(26, Pin.IN)
     rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
-    clock4 = Pin(13, Pin.OUT) # Toggle polarity to advance minute YELLOW
-    clock3 = Pin(12, Pin.OUT) # Toggle polarity to advance minute ORANGE
-    clock2 = Pin(11, Pin.OUT) # Driving the seconds hand BLUE
-    clock1 = Pin(9, Pin.OUT) # Driving the seconds hand GREEN
-    clockenable1 = Pin(14, Pin.OUT) # Driving the minute hand WHITE
-    clockenable2 = Pin(18, Pin.OUT) # Driving the seconds hand PURPLE
+    clock2 = Pin(13, Pin.OUT, value=1) # Toggle polarity to advance minute ORANGE
+    clock1 = Pin(10, Pin.OUT, value=1) # Driving the seconds hand YELLOW
+
     print("RTC reads:")
     rtc.read_time()
     # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
     # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
     # is to attach a switch to give a 1 minute nudge if needed.
-    a = True
-    b = False
-    clockenable2(1)
-    clockenable1(1)
-    clock1(1)
+    b = True
+    a = False
+    # Turn the second hand motor on (might need pwm for sustained movement)
+    clock1(0)
     clock2(1)
-    offset=0    # This is a corrective term passed to pulse eg CET to CEST = 60 CEST to CET = -60
+    
+    offset=0   
     while True:
         thetimestring=rtc.read_time().split(" ")[1]
         minutes=thetimestring.split(":")[1]
         # run this once a day (at a time that won't cause issues (3:33))- update rtc
-        
         if thetimestring=="03:33:33":
+            while not detectNewMinute(dcf):
+                pass
             radiotime, minutessofar = computeTime(dcf)
             if radiotime != 'failed':
                 sleep(1)
@@ -270,22 +274,28 @@ if __name__ == '__main__':
                 realtimeclock=rtc.read_time().split(" ")[1]
                 # calculate the difference between radiotime and rtc
                 # number of minutes between RTC and Radiotimeimport
-                offset =  minutestoday(realtimeclock)-minutessofar
-                print("Correction Offset (minutes):"+str(minutestoday(realtimeclock)) +" - "+ str(minutessofar) +" = " + str(offset))
                 rtc.set_time(radiotime)
                 ledPin.value(1)
                 rtc.read_time()
-                a, b = pulseminute(radiotime,a,b,offset)
             else:
-                print('Radio Time Fail')
+                print('Radio Time Fail, turning off on board LED')
                 ledPin.value(0)
+        # Calculate offset by comparing value in file from last pulse to rtc value
+        
+        if offset==0:
+            pass
+        else:
+            # This is where the puse correction is
+            print("offset:"+str(offset))
+            a, b = pulseminute(radiotime,a,b,offset)
+            pass
         sleep_ms(100)
-        print(minutes)
-        # Every minute, according to RTC, pulse to clock.
+
         
         
 
         
  
+
 
 
