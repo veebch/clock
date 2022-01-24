@@ -65,6 +65,7 @@ def atobar(a, val):
 # decodes the received signal into a time 
 def computeTime(dcf):
     radiotime='failed'
+    minutestoday='failed'
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 5                                 # time between samples (ms)
     samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
@@ -97,11 +98,11 @@ def computeTime(dcf):
             if timeInfo[0] != 0 or timeInfo[20] != 1:
                 print("Error: Check bits not set to correct value")
                 #break
-                return radiotime
+                return radiotime, minutestoday
             if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
                 print("Error: parity")
                 # break
-                return radiotime
+                return radiotime, minutestoday
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
             
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
@@ -114,15 +115,16 @@ def computeTime(dcf):
             elif timeInfo[18]==1:
                 season='CET'
             else:
-                return radiotime
+                return radiotime, minutestoday
             #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
             radiotime= twodigits(str(stunde))+ ":" + twodigits(str(minute)) + ":00," + str(weekday(wochentag)) + "," + str(2000+jahr) + '-' + twodigits(str(monat))+ '-' + twodigits(str(tag))
+            minutestoday=60*int(stunde)+int(minute)
             #rtc.set_time('13:45:50,Monday,2021-05-24')
             # print(radiotime)
             # sleep for 1 second and break
             sleep(1)
-            return radiotime
+            return radiotime, minutestoday
         sleep_ms(samplespeed + delta)
         cnt += 1
 
@@ -167,7 +169,9 @@ class ds3231(object):
         d = t[3]&0x07  #week
         e = t[4]&0x3F  #day
         f = t[5]&0x1F  #month
-        print("20%x/%02x/%02x %02x:%02x:%02x %s" %(t[6],t[5],t[4],t[2],t[1],t[0],self.w[t[3]-1]))
+        timestring="20%x/%02x/%02x %02x:%02x:%02x %s" %(t[6],t[5],t[4],t[2],t[1],t[0],self.w[t[3]-1])
+        print(timestring)
+        return timestring
 
     def set_alarm_time(self,alarm_time):
         #    init the alarm pin
@@ -185,20 +189,28 @@ class ds3231(object):
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
     
-def pulseminute(timestring,a,b):
-    clockenable1.value(1)
-    a = not a
-    b = not b
-    clock1(int(a))
-    clock2(int(b))
-    sleep_ms(300)
-    # turn the minute motor off and then return the last values
-    clockenable1.value(0)
-    strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
-    file = open ("lastpulseat.txt", "w")
-    file.write(strngtofile)
-    file.close()
-    return a
+def pulseminute(timestring,a,b,offset):
+    while offset>0:
+        print('PULSE 1 min')
+        clockenable1.value(1)
+        a = not a
+        b = not b
+        clock1(int(a))
+        clock2(int(b))
+        sleep_ms(300)
+        # turn the minute motor off and then return the last values
+        clockenable1.value(0)
+        strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
+        file = open ("lastpulseat.txt", "w")
+        file.write(strngtofile)
+        file.close()
+        offset = offset - 1
+    return a, b
+
+def minutestoday(timestring):
+    breakuptime =timestring.split(":") 
+    minsintoday=int(breakuptime[0])*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
+    return minsintoday
 
 #----------------MAIN LOGIC
 
@@ -241,28 +253,38 @@ if __name__ == '__main__':
     a = True
     b = False
     clockenable2(1)
+    clockenable1(1)
     clock1(1)
-    clock2(0)
+    clock2(1)
+    offset=0    # This is a corrective term passed to pulse eg CET to CEST = 60 CEST to CET = -60
     while True:
-        # run this once a day - update rtc 
-        if detectNewMinute(dcf):
-            radiotime = computeTime(dcf)
+        thetimestring=rtc.read_time().split(" ")[1]
+        minutes=thetimestring.split(":")[1]
+        # run this once a day (at a time that won't cause issues (3:33))- update rtc
+        
+        if thetimestring=="03:33:33":
+            radiotime, minutessofar = computeTime(dcf)
             if radiotime != 'failed':
+                sleep(1)
                 print(radiotime)
+                realtimeclock=rtc.read_time().split(" ")[1]
                 # calculate the difference between radiotime and rtc
+                # number of minutes between RTC and Radiotimeimport
+                offset =  minutestoday(realtimeclock)-minutessofar
+                print("Correction Offset (minutes):"+str(minutestoday(realtimeclock)) +" - "+ str(minutessofar) +" = " + str(offset))
                 rtc.set_time(radiotime)
-                print("Got ourselves a radiotime")
                 ledPin.value(1)
                 rtc.read_time()
-                a = pulseminute(radiotime,a,b)
-                b = not a
+                a, b = pulseminute(radiotime,a,b,offset)
             else:
                 print('Radio Time Fail')
                 ledPin.value(0)
-            # Once a day, start a thread to update the RTC according to the DCF77 signal
-            # apply a correction if needed. 
+        sleep_ms(100)
+        print(minutes)
         # Every minute, according to RTC, pulse to clock.
-        # Write time to file after pulse
+        
+        
+
         
  
 
