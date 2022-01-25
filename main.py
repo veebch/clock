@@ -221,14 +221,16 @@ def minutestoday(timestring):
 def calcoffset():
     # compare rtc to time in file (or if it doesnt exist, the initial time file)
     try:
-    f = open('lastpulseat.txt', "r")
-    # continue with the file.
-except OSError:  # open failed
-    print('file does not exist. Assuming this is the first run')
-    f = open('firstime.txt', "r")
-    # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the fron polarity on the first run still needs to be dealt with
-    # a 1munute toggle button that doesnt change the time still seems like the best bet
-    return offset
+        f = open('lastpulseat.txt', "r")
+        # continue with the file.
+    except OSError:  # open failed
+        print('file does not exist. Assuming this is the first run')
+        f = open('firsruntime.txt', "r")
+        a= True
+        b= False  
+        # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the wrong polarity on the first run still needs to be dealt with
+        # a 1 minute toggle button that doesnt change the time still seems like the best bet, epaper and rotary encoder is also an option
+    return offset,a,b
 
 #----------------MAIN LOGIC
 
