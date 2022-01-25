@@ -222,12 +222,23 @@ def calcoffset():
     # compare rtc to time in file (or if it doesnt exist, the initial time file)
     try:
         f = open('lastpulseat.txt', "r")
+        string=f.read().split('\t')
+        a=string[1]
+        b=string[2]
+        lastpulseat=string[0]
+        lastpulse=minutestoday(lastpulseat)
         # continue with the file.
     except OSError:  # open failed
         print('file does not exist. Assuming this is the first run')
         f = open('firsruntime.txt', "r")
+        initialstring=f.read()
+        lastpulse=minutestoday(initialstring)
         a= True
-        b= False  
+        b= False
+     print(lastpulse)
+     realtimeclock=rtc.read_time().split(" ")[1]
+     rtcminutestoday=minutestoday(realtimeclock)
+     offset=rtcminutestoday-lastpulse
         # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the wrong polarity on the first run still needs to be dealt with
         # a 1 minute toggle button that doesnt change the time still seems like the best bet, epaper and rotary encoder is also an option
     return offset,a,b
