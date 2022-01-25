@@ -169,7 +169,7 @@ class ds3231(object):
         e = t[4]&0x3F  #day
         f = t[5]&0x1F  #month
         timestring="20%x/%02x/%02x %02x:%02x:%02x %s" %(t[6],t[5],t[4],t[2],t[1],t[0],self.w[t[3]-1])
-        print(timestring)
+        #print(timestring)
         return timestring
 
     def set_alarm_time(self,alarm_time):
@@ -202,14 +202,16 @@ def pulseminute(lasttime,a,b):
     lasttimemin=int(splittime[1])
     # Now increment by 1 minute ( bearing in mind that 11:59 + 1 is 00:00 )
     lasttimemin=(lasttimemin +1) % 60
-    lasttimehour=(lasttimehour + ((lasttimemin +1) // 60)) % 12
+    if lasttimemin==0:
+        lasttimehour=lasttimehour + 1
+    lasttimehour=(lasttimehour) % 12
     # turn the minute motor off and then return the last values
     newtime= str(lasttimehour) + ":" + str(lasttimemin) + ":00"
     strngtofile = newtime + '\t' + str(a) + '\t' + str(b)
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
     file.close()
-    # dignified little sleep
+    # dignified little sleep so we don't upset the clock mechanism
     sleep(1)
     return
 
@@ -241,7 +243,7 @@ def calcoffset():
     realtimeclock = rtc.read_time().split(" ")[1]
     rtcminutestoday = minutestoday(realtimeclock)
     offset=rtcminutestoday - lastpulse            
-    print('Offset:' + str(offset))
+    print('Offset:' + str(offset) + "-" + str(realtimeclock) + " " + str(lastpulseat) + " " + str(rtcminutestoday) + " " + str(lastpulse))
     return offset, lastpulseat, a, b
 
 #---------------- MAIN LOGIC
@@ -309,11 +311,13 @@ if __name__ == '__main__':
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset()
-        if offset==0:
+        if offset>=-60 and offset<=0:
             pass
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
+
+
 
 
