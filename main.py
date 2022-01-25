@@ -98,11 +98,11 @@ def computeTime(dcf):
             if timeInfo[0] != 0 or timeInfo[20] != 1:
                 print("Error: Check bits not set to correct value")
                 #break
-                return radiotime, minutestoday
+                return radiotime, False
             if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
                 print("Error: parity")
                 # break
-                return radiotime, minutestoday
+                return radiotime, False
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
             
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
@@ -115,16 +115,15 @@ def computeTime(dcf):
             elif timeInfo[18]==1:
                 season='CET'
             else:
-                return radiotime, minutestoday
+                return radiotime
             #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
             radiotime= twodigits(str(stunde))+ ":" + twodigits(str(minute)) + ":00," + str(weekday(wochentag)) + "," + str(2000+jahr) + '-' + twodigits(str(monat))+ '-' + twodigits(str(tag))
-            minutestoday=60*int(stunde)+int(minute)
             #rtc.set_time('13:45:50,Monday,2021-05-24')
             # print(radiotime)
             # sleep for 1 second and break
             sleep(1)
-            return radiotime, minutestoday
+            return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
 
@@ -235,10 +234,10 @@ def calcoffset():
         lastpulse=minutestoday(initialstring)
         a= True
         b= False
-     print(lastpulse)
-     realtimeclock=rtc.read_time().split(" ")[1]
-     rtcminutestoday=minutestoday(realtimeclock)
-     offset=rtcminutestoday-lastpulse
+    print(lastpulse)
+    realtimeclock=rtc.read_time().split(" ")[1]
+    rtcminutestoday=minutestoday(realtimeclock)
+    offset=rtcminutestoday-lastpulse
         # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the wrong polarity on the first run still needs to be dealt with
         # a 1 minute toggle button that doesnt change the time still seems like the best bet, epaper and rotary encoder is also an option
     return offset,a,b
@@ -283,8 +282,13 @@ if __name__ == '__main__':
     # Turn the second hand motor on (might need pwm for sustained movement)
     clock1(0)
     clock2(1)
-    
-    offset=0   
+    # The initial time synchronisation, loop until there is a value we can use to update the rtc
+    gottime=False
+    while gottime==False:
+            while not detectNewMinute(dcf):
+                pass
+            radiotime, gottime = computeTime(dcf)
+    offset,a,b = calcoffset()
     while True:
         thetimestring=rtc.read_time().split(" ")[1]
         minutes=thetimestring.split(":")[1]
@@ -292,8 +296,8 @@ if __name__ == '__main__':
         if thetimestring=="03:33:33":
             while not detectNewMinute(dcf):
                 pass
-            radiotime, minutessofar = computeTime(dcf)
-            if radiotime != 'failed':
+            radiotime, success = computeTime(dcf)
+            if success:
                 sleep(1)
                 print(radiotime)
                 realtimeclock=rtc.read_time().split(" ")[1]
