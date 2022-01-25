@@ -196,14 +196,14 @@ def pulseminute(lasttime,a,b):
     clock1(int(a))
     clock2(int(b))
     sleep_ms(300)
-    splittime=lastime.split(':')
-    lasttimehour=splittime[0]
-    lasttimemin=splittime[0] 
+    splittime=lasttime.split(':')
+    lasttimehour=int(splittime[0])
+    lasttimemin=int(splittime[1])
     # Now increment by 1 minute ( bearing in mind that 11:59 + 1 is 00:00 )
     lasttimemin=(lasttimemin +1) % 60
-    lasttimehour=(lastimehour + ((lasttimemin +1) // 60)) % 12
+    lasttimehour=(lasttimehour + ((lasttimemin +1) // 60)) % 12
     # turn the minute motor off and then return the last values
-    newtime= str(lasttimehour) + ":" + str(lastimemin) + ":00"
+    newtime= str(lasttimehour) + ":" + str(lasttimemin) + ":00"
     strngtofile = newtime + '\t' + str(a) + '\t' + str(b)
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
@@ -213,8 +213,9 @@ def pulseminute(lasttime,a,b):
     return
 
 def minutestoday(timestring):
+    # But the time on an analog clock is 0-12, so the name is a bit misleading
     breakuptime =timestring.split(":") 
-    minsintoday=int(breakuptime[0])*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
+    minsintoday=(int(breakuptime[0]) % 12)*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
     return minsintoday
 
 def calcoffset():
@@ -285,7 +286,7 @@ if __name__ == '__main__':
     #--------------Main loop
     # Super simple:
     # 1. Is the clock showing the right time according to the RTC? 
-    # 2. If no (and it's more than an hour fast) advance a minute, otherwise, do nothing 
+    # 2. If no advance a minute, otherwise, do nothing (refine this)
     # 3. Goto 1
 
     while True:
@@ -309,10 +310,11 @@ if __name__ == '__main__':
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset()
-        if offset<=0 and offset>=-60:
+        if offset==0:
             pass
         else:
             # Advance the minute hand, make a note of where it is
-            pulseminute(lastime,a,b)
+            pulseminute(lasttime,a,b)
         print("offset:"+str(offset))
         sleep_ms(100)
+
