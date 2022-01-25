@@ -13,7 +13,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - A ferrite receiver (for DCF77 signal)
 - A microcontroller (Raspberry Pi Pico)
 - Real time clock (RTC) (backup for any radio signal issues)
-- 3.3V to 24V step up board
+- 24V DC to 5V DC step down board
 - H bridge (for the polarity switch that triggers the clock mechanism)
 
 # Video
