@@ -211,7 +211,7 @@ def minutestoday(timestring):
     return minsintoday
 
 def calcoffset():
-    # compare rtc to time in file (or if it doesnt exist, the initial time file)
+    # compare rtc to time in file (or if the file doesn't exist, use the initial time file)
     try:
         f = open('lastpulseat.txt', "r")
         string=f.read().split('\t')
@@ -222,37 +222,33 @@ def calcoffset():
         # continue with the file.
     except OSError:  # open failed
         print('file does not exist. Assuming this is the first run')
+        # This initial time file has the time that the clock reads on first connection - the potential lost minute caused by using the wrong polarity on the first run still needs to be dealt with
+        # a 1 minute toggle button that doesnt change the time still seems like the best bet
         f = open('firstruntime.txt', "r")
         initialstring=f.read()
         lastpulse=minutestoday(initialstring)
-        a= True
+        a= True    # a guess, swap if needed
         b= False
-    print(lastpulse)
     realtimeclock=rtc.read_time().split(" ")[1]
     rtcminutestoday=minutestoday(realtimeclock)
-    offset=rtcminutestoday-lastpulse
-        # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the wrong polarity on the first run still needs to be dealt with
-        # a 1 minute toggle button that doesnt change the time still seems like the best bet, epaper and rotary encoder is also an option
-    return offset,a,b
+    offset=rtcminutestoday-lastpulse            
+    print('Offset:' + str(offset))
+    return offset
 
-#----------------MAIN LOGIC
+#---------------- MAIN LOGIC
 
 if __name__ == '__main__':
     
-    #------------ RTC PIN ALLOCATION
-
-    #    the first version uses i2c1
+    #------------ Real Time Clock (RTC) PIN ALLOCATION
+    #    the first version of the rtc uses i2c1
     I2C_PORT = 1
     I2C_SDA = 6
     I2C_SCL = 7
-
-    #    The new versions of the rtc uses i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
-
+    #    The new versions of the rtc use i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
     #I2C_PORT = 0
     #I2C_SDA = 20
     #I2C_SCL = 21
     #ALARM_PIN = 3
-
     #----------- END RTC PIN ALLOCATION
     
     # to wake up dcf1 
@@ -265,32 +261,35 @@ if __name__ == '__main__':
     clock2 = Pin(13, Pin.OUT, value=1) # Toggle polarity to advance minute ORANGE
     clock1 = Pin(10, Pin.OUT, value=1) # Driving the seconds hand YELLOW
 
-    print("RTC reads:")
+    print("Startup of DCF77 code. RTC reads:")
     rtc.read_time()
     # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
     # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
     # is to attach a switch to give a 1 minute nudge if needed.
-    b = True
+    b = True    
     a = False
-    # Turn the second hand motor on (might need pwm for sustained movement)
-    clock1(0)
-    clock2(1)
-    # The initial time synchronisation, loop until there is a value we can use to update the rtc
+    # The initial time synchronisation, loop until there is a value we can use to update the real time clock 
     gottime=False
     while gottime==False:
             while not detectNewMinute(dcf):
                 pass
             radiotime, gottime = computeTime(dcf)
+
+    #--------------Main loop
+    # Super simple:
+    # 1. Is the clock showing the right time according to the RTC? 
+    # 2. If no (and it's more than an hour fast) advance a minute, otherwise, do nothing 
+    # 3. Goto 1
+
     while True:
-        thetimestring=rtc.read_time().split(" ")[1]
-        minutes=thetimestring.split(":")[1]
+        rtctimestring=rtc.read_time().split(" ")[1] # Get the current time string from the rtc
         # run this once a day (at a time that won't cause issues (3:33))- update rtc
-        if thetimestring=="03:33:33":
+        if rtctimestring=="03:33:33":     # The correction in the wee hours of the morning
             while not detectNewMinute(dcf):
                 pass
             radiotime, success = computeTime(dcf)
             if success:
-                sleep(1)
+                sleep(1) 
                 print(radiotime)
                 realtimeclock=rtc.read_time().split(" ")[1]
                 # calculate the difference between radiotime and rtc
@@ -302,12 +301,11 @@ if __name__ == '__main__':
                 print('Radio Time Fail, turning off on board LED')
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
-        offset, a, b = calcoffset()
-        if offset==0:
+        offset = calcoffset()
+        if offset<=0 and offset>=-60:
             pass
         else:
-            # This is where the pluse correction is
-            a, b = pulseminute(a,b)
-            pass
+            # Advance the minute hand, make a note of where it is
+            pulseminute()
         print("offset:"+str(offset))
         sleep_ms(100)
