@@ -191,8 +191,9 @@ class ds3231(object):
 def pulseminute(lasttime,a,b):
     print('PULSE 1 min')
     # get a b and lastime
-    a = not a # Reverse polarity from the lastpulse 
-    b = not b
+    a = not bool(a) # Reverse polarity from the lastpulse 
+    b = not bool(b)
+    print("Polarity: " + str(a) + str(b))
     clock1(int(a))
     clock2(int(b))
     sleep_ms(300)
@@ -223,8 +224,8 @@ def calcoffset():
     try:
         f = open('lastpulseat.txt', "r")
         string = f.read().split('\t')
-        a=string[1]
-        b=string[2]
+        a=(string[1]=='True')
+        b=(string[2]=='True')
         lastpulseat = string[0]
         lastpulse = minutestoday(lastpulseat)
     except:  # open failed
@@ -274,8 +275,6 @@ if __name__ == '__main__':
     # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
     # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
     # is to attach a switch to give a 1 minute nudge if needed.
-    b = True    
-    a = False
     # The initial time synchronisation, loop until there is a value we can use to update the real time clock 
     gottime=False
     while gottime==False:
@@ -315,6 +314,6 @@ if __name__ == '__main__':
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
-        print("offset:"+str(offset))
         sleep_ms(100)
+
 
