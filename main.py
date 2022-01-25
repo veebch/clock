@@ -188,7 +188,7 @@ class ds3231(object):
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
     
-def pulseminute():
+def pulseminute(lasttime,a,b):
     print('PULSE 1 min')
     # get a b and lastime
     a = not a # Reverse polarity from the lastpulse 
@@ -196,8 +196,15 @@ def pulseminute():
     clock1(int(a))
     clock2(int(b))
     sleep_ms(300)
+    splittime=lastime.split(':')
+    lasttimehour=splittime[0]
+    lasttimemin=splittime[0] 
+    # Now increment by 1 minute ( bearing in mind that 11:59 + 1 is 00:00 )
+    lasttimemin=(lasttimemin +1) % 60
+    lasttimehour=(lastimehour + ((lasttimemin +1) // 60)) % 12
     # turn the minute motor off and then return the last values
-    strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
+    newtime= str(lasttimehour) + ":" + str(lastimemin) + ":00"
+    strngtofile = newtime + '\t' + str(a) + '\t' + str(b)
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
     file.close()
@@ -214,26 +221,26 @@ def calcoffset():
     # compare rtc to time in file (or if the file doesn't exist, use the initial time file)
     try:
         f = open('lastpulseat.txt', "r")
-        string=f.read().split('\t')
+        string = f.read().split('\t')
         a=string[1]
         b=string[2]
-        lastpulseat=string[0]
-        lastpulse=minutestoday(lastpulseat)
-        # continue with the file.
-    except OSError:  # open failed
+        lastpulseat = string[0]
+        lastpulse = minutestoday(lastpulseat)
+    except:  # open failed
         print('file does not exist. Assuming this is the first run')
         # This initial time file has the time that the clock reads on first connection - the potential lost minute caused by using the wrong polarity on the first run still needs to be dealt with
         # a 1 minute toggle button that doesnt change the time still seems like the best bet
         f = open('firstruntime.txt', "r")
-        initialstring=f.read()
-        lastpulse=minutestoday(initialstring)
+        initialstring = f.read()
+        lastpulseat = initialstring
+        lastpulse = minutestoday(initialstring)
         a= True    # a guess, swap if needed
         b= False
-    realtimeclock=rtc.read_time().split(" ")[1]
-    rtcminutestoday=minutestoday(realtimeclock)
-    offset=rtcminutestoday-lastpulse            
+    realtimeclock = rtc.read_time().split(" ")[1]
+    rtcminutestoday = minutestoday(realtimeclock)
+    offset=rtcminutestoday - lastpulse            
     print('Offset:' + str(offset))
-    return offset
+    return offset, lastpulseat, a, b
 
 #---------------- MAIN LOGIC
 
@@ -301,11 +308,11 @@ if __name__ == '__main__':
                 print('Radio Time Fail, turning off on board LED')
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
-        offset = calcoffset()
+        offset, lasttime, a, b = calcoffset()
         if offset<=0 and offset>=-60:
             pass
         else:
             # Advance the minute hand, make a note of where it is
-            pulseminute()
+            pulseminute(lastime,a,b)
         print("offset:"+str(offset))
         sleep_ms(100)
