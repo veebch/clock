@@ -201,7 +201,7 @@ def pulseminute(timestringa,a,b,offset):
         # turn the minute motor off and then return the last values
         clockenable1.value(0)
         strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
-        file = open ("lastpulseat.txt", "w")
+        file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
         file.write(strngtofile)
         file.close()
         offset = offset - 1
@@ -217,6 +217,18 @@ def minutestoday(timestring):
     breakuptime =timestring.split(":") 
     minsintoday=int(breakuptime[0])*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
     return minsintoday
+
+def calcoffset():
+    # compare rtc to time in file (or if it doesnt exist, the initial time file)
+    try:
+    f = open('lastpulseat.txt', "r")
+    # continue with the file.
+except OSError:  # open failed
+    print('file does not exist. Assuming this is the first run')
+    f = open('firstime.txt', "r")
+    # This initial time file has the time that the clock reads on first connection - the potential lost minute caused bu using the fron polarity on the first run still needs to be dealt with
+    # a 1munute toggle button that doesnt change the time still seems like the best bet
+    return offset
 
 #----------------MAIN LOGIC
 
@@ -281,11 +293,11 @@ if __name__ == '__main__':
                 print('Radio Time Fail, turning off on board LED')
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
-        
+        offset = calcoffset()
         if offset==0:
             pass
         else:
-            # This is where the puse correction is
+            # This is where the pluse correction is
             print("offset:"+str(offset))
             a, b = pulseminute(radiotime,a,b,offset)
             pass
