@@ -26,6 +26,7 @@ Assemble the Pico, step up transformer and H bridge. Note that the voltage of th
 Copy the files from this repository
 
       git clone https://github.com/veebch/clock
+      cd clock
 
 then send them your Pico using ampy
    
