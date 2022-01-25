@@ -188,29 +188,22 @@ class ds3231(object):
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
     
-def pulseminute(timestringa,a,b,offset):
-    while offset>0:
-        print('PULSE 1 min')
-        clockenable1.value(1)
-        a = not a # Reverse po
-        b = not b
-        clock1(int(a))
-        clock2(int(b))
-        sleep_ms(300)
-        # turn the minute motor off and then return the last values
-        clockenable1.value(0)
-        strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
-        file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
-        file.write(strngtofile)
-        file.close()
-        offset = offset - 1
-    return a, b
-
-def getlastpulse():
-    with open('lastpulseat.txt') as f:
-        lines = f.readlines()
-    f.close()
-    return lines
+def pulseminute():
+    print('PULSE 1 min')
+    # get a b and lastime
+    a = not a # Reverse polarity from the lastpulse 
+    b = not b
+    clock1(int(a))
+    clock2(int(b))
+    sleep_ms(300)
+    # turn the minute motor off and then return the last values
+    strngtofile = timestring + '\t' + str(a) + '\t' + str(b)
+    file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
+    file.write(strngtofile)
+    file.close()
+    # dignified little sleep
+    sleep(1)
+    return
 
 def minutestoday(timestring):
     breakuptime =timestring.split(":") 
@@ -229,7 +222,7 @@ def calcoffset():
         # continue with the file.
     except OSError:  # open failed
         print('file does not exist. Assuming this is the first run')
-        f = open('firsruntime.txt', "r")
+        f = open('firstruntime.txt', "r")
         initialstring=f.read()
         lastpulse=minutestoday(initialstring)
         a= True
@@ -288,7 +281,6 @@ if __name__ == '__main__':
             while not detectNewMinute(dcf):
                 pass
             radiotime, gottime = computeTime(dcf)
-    offset,a,b = calcoffset()
     while True:
         thetimestring=rtc.read_time().split(" ")[1]
         minutes=thetimestring.split(":")[1]
@@ -310,21 +302,12 @@ if __name__ == '__main__':
                 print('Radio Time Fail, turning off on board LED')
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
-        offset = calcoffset()
+        offset, a, b = calcoffset()
         if offset==0:
             pass
         else:
             # This is where the pluse correction is
-            print("offset:"+str(offset))
-            a, b = pulseminute(radiotime,a,b,offset)
+            a, b = pulseminute(a,b)
             pass
+        print("offset:"+str(offset))
         sleep_ms(100)
-
-        
-        
-
-        
- 
-
-
-
