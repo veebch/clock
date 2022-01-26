@@ -145,9 +145,8 @@ class ds3231(object):
     alarm1_reg = 0x07
     control_reg = 0x0e
     status_reg = 0x0f
-    
     def __init__(self,i2c_port,i2c_scl,i2c_sda):
-        self.bus = I2C(i2c_port,scl=Pin(i2c_scl),sda=Pin(i2c_sda))
+        self.bus = I2C(i2c_port,scl=Pin(i2c_scl),sda=Pin(i2c_sda), freq=200000)
 
     def set_time(self,new_time):
         hour = new_time[0] + new_time[1]
@@ -275,7 +274,9 @@ if __name__ == '__main__':
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
     clock2 = Pin(13, Pin.OUT, value=1) # Toggle polarity to advance minute ORANGE
     clock1 = Pin(10, Pin.OUT, value=1) # Driving the seconds hand YELLOW
-
+    ledPin(1)
+    sleep(.3)
+    ledPin(0)
     print("Startup of DCF77 code. RTC reads:")
     print(rtc.read_time())
     # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
@@ -283,7 +284,13 @@ if __name__ == '__main__':
     # is to attach a switch to give a 1 minute nudge if needed.
     # The initial time synchronisation, loop until there is a value we can use to update the real time clock 
     gottime=False
-    while gottime==False:
+    try:
+        f = open('lastpulseat.txt', "r")
+        f.close()
+        print('There is a lastpulse record. Assuming Real Time clock is ok.... will set against radio signal later')
+    except:
+        print('Looks like the first run, setting rtc from radio signal')
+        while gottime==False:
             while not detectNewMinute(dcf):
                 pass
             radiotime, gottime = computeTime(dcf)
@@ -321,3 +328,7 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
+
+
+
+
