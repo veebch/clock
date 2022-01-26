@@ -199,6 +199,8 @@ def pulseminute(lasttime,a,b):
     clock1(int(a))
     clock2(int(b))
     sleep_ms(300)
+    clock1(0)
+    clock2(0)
     splittime=lasttime.split(':')
     lasttimehour=int(splittime[0])
     lasttimemin=int(splittime[1])
@@ -275,7 +277,7 @@ if __name__ == '__main__':
     clock1 = Pin(10, Pin.OUT, value=1) # Driving the seconds hand YELLOW
 
     print("Startup of DCF77 code. RTC reads:")
-    rtc.read_time()
+    print(rtc.read_time())
     # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
     # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
     # is to attach a switch to give a 1 minute nudge if needed.
@@ -319,7 +321,3 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
-
-
-
-
