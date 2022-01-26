@@ -62,6 +62,13 @@ def atobar(a, val):
             stringa += ' '
     return stringa
 
+
+def twodigits(digit):    # Takes a single digit integer and turns it into a two digit string (or a two digit number and does nothing to it). 
+    digitstring=str(digit)        
+    if len(digitstring)==1:
+        digitstring= "0"+digitstring
+    return digitstring
+
 # decodes the received signal into a time 
 def computeTime(dcf):
     radiotime='failed'
@@ -118,7 +125,7 @@ def computeTime(dcf):
                 return radiotime
             #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
-            radiotime= twodigits(str(stunde))+ ":" + twodigits(str(minute)) + ":00," + str(weekday(wochentag)) + "," + str(2000+jahr) + '-' + twodigits(str(monat))+ '-' + twodigits(str(tag))
+            radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
             #rtc.set_time('13:45:50,Monday,2021-05-24')
             # print(radiotime)
             # sleep for 1 second and break
@@ -126,11 +133,6 @@ def computeTime(dcf):
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
-
-def twodigits(str):
-    if len(str)==1:
-        str= "0"+str
-    return str
 
 class ds3231(object):
 #            13:45:00 Mon 24 May 2021
@@ -206,8 +208,8 @@ def pulseminute(lasttime,a,b):
         lasttimehour=lasttimehour + 1
     lasttimehour=(lasttimehour) % 12
     # turn the minute motor off and then return the last values
-    newtime= str(lasttimehour) + ":" + str(lasttimemin) + ":00"
-    strngtofile = newtime + '\t' + str(a) + '\t' + str(b)
+    newtime= twodigits(lasttimehour) + ":" + twodigits(lasttimemin) + ":00"
+    strngtofile = newtime + '\t' + str(a)+ '\t' + str(b)
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
     file.close()
