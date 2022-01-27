@@ -72,7 +72,7 @@ def twodigits(digit):    # Takes a single digit integer and turns it into a two 
 # decodes the received signal into a time 
 def computeTime(dcf):
     radiotime='failed'
-    minutestoday='failed'
+    minutesince12='failed'
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 5                                 # time between samples (ms)
     samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
@@ -218,8 +218,7 @@ def pulseminute(lasttime,a,b):
     sleep(1)
     return
 
-def minutestoday(timestring):
-    # But the time on an analog clock is 0-12, so the name is a bit misleading
+def minutesince12(timestring):
     breakuptime =timestring.split(":") 
     minsintoday=(int(breakuptime[0]) % 12)*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
     return minsintoday
@@ -232,32 +231,32 @@ def calcoffset(timenow):
         a=(string[1]=='True')
         b=(string[2]=='True')
         lastpulseat = string[0]
-        lastpulse = minutestoday(lastpulseat)
+        lastpulse = minutesince12(lastpulseat)
     except:  # open failed
         print('file does not exist. Assuming this is the first run')
-        # This initial time file has the time that the clock reads on first connection - the potential lost minute caused by using the wrong polarity on the first run still needs to be dealt with
-        # a 1 minute toggle button that doesnt change the time still seems like the best bet
+        # This initial time file has the time that the clock reads on first connection
         f = open('firstruntime.txt', "r")
         initialstring = f.read()
         lastpulseat = initialstring
-        lastpulse = minutestoday(initialstring)
+        lastpulse = minutesince12(initialstring)
         a= True    # a guess, swap if needed
         b= False
-    rtcminutestoday = minutestoday(timenow)
-    offset=rtcminutestoday - lastpulse            
-    print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcminutestoday) + " " + str(lastpulse))
+    rtcminutesince12 = minutesince12(timenow)
+    offset=rtcminutesince12 - lastpulse            
+    #print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcminutesince12) + " " + str(lastpulse))
     return offset, lastpulseat, a, b
 
 #---------------- MAIN LOGIC
 
 if __name__ == '__main__':
-    FORCE_RADIO_UPDATE = False   # Force radio update before anything else
+    FORCE_RADIO_UPDATE = False          # Force radio update before anything else
+    REAL_TIME_CLOCK_ATTACHED = True     # Unused for now, but if radio is forced, then you can use the pico's internal rtc (resets when removed from power)
     #------------ Real Time Clock (RTC) PIN ALLOCATION
     #    the first version of the rtc uses i2c1
     I2C_PORT = 1
     I2C_SDA = 6
     I2C_SCL = 7
-    #    The new versions of the rtc use i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
+    #    The newer versions of the RTC use i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
     #I2C_PORT = 0
     #I2C_SDA = 20
     #I2C_SCL = 21
@@ -271,24 +270,22 @@ if __name__ == '__main__':
     dcf = Pin(26, Pin.IN)
     rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
-    clock2 = Pin(13, Pin.OUT, value=1) # Toggle polarity to advance minute ORANGE
-    clock1 = Pin(10, Pin.OUT, value=1) # Driving the seconds hand YELLOW
-    ledPin(1)
+    clock2 = Pin(13, Pin.OUT, value=1)  # Toggle polarity to advance minute ORANGE
+    clock1 = Pin(10, Pin.OUT, value=1)  # Driving the seconds hand YELLOW
+    ledPin(1)                           # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
     print("Startup of DCF77 code. RTC reads:")
     print(rtc.read_time())
-    # Initialise the value for the polarity of the hands (need to understand whether this might lead to a missed initial advance)
-    # Maybe save last polarity to the file containing time at last update. For the inital setting, we may need to 'flush' the clock with a single a = false, b= true run, the alternative
-    # is to attach a switch to give a 1 minute nudge if needed.
-    # The initial time synchronisation, loop until there is a value we can use to update the real time clock 
+    # Initialise the value for the polarity of the hands
+    # The initial time synchronisation, loop until there is a valid value we can use to update the real time clock 
     gottime=False
     try:
         if FORCE_RADIO_UPDATE:
             raise('Forced Radio')
         f = open('lastpulseat.txt', "r")
         f.close()
-        print('There is a lastpulse record. Assuming Real Time clock is ok.... will set against radio signal later')
+        print('There is a lastpulse file. Assuming Real Time clock is ok.... will set against radio signal later')
     except:
         print('Looks like the first (or forced radio) run, setting rtc from radio signal')
         while gottime==False:
@@ -298,8 +295,8 @@ if __name__ == '__main__':
 
     #--------------Main loop
     # Super simple:
-    # 1. Is the clock showing the right time according to the RTC? 
-    # 2. If no advance a minute, otherwise, do nothing (refine this)
+    # 1. Is the clock showing the right time according to the RTC (or is it more than an hour fast)? 
+    # 2. If no advance a minute, otherwise, do nothing
     # 3. Goto 1
 
     while True:
@@ -325,3 +322,4 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
+
