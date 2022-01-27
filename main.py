@@ -251,7 +251,7 @@ def calcoffset(timenow):
 #---------------- MAIN LOGIC
 
 if __name__ == '__main__':
-    
+    FORCE_RADIO_UPDATE = False   # Force radio update before anything else
     #------------ Real Time Clock (RTC) PIN ALLOCATION
     #    the first version of the rtc uses i2c1
     I2C_PORT = 1
@@ -284,11 +284,13 @@ if __name__ == '__main__':
     # The initial time synchronisation, loop until there is a value we can use to update the real time clock 
     gottime=False
     try:
+        if FORCE_RADIO_UPDATE:
+            raise('Forced Radio')
         f = open('lastpulseat.txt', "r")
         f.close()
         print('There is a lastpulse record. Assuming Real Time clock is ok.... will set against radio signal later')
     except:
-        print('Looks like the first run, setting rtc from radio signal')
+        print('Looks like the first (or forced radio) run, setting rtc from radio signal')
         while gottime==False:
             while not detectNewMinute(dcf):
                 pass
