@@ -224,7 +224,7 @@ def minutestoday(timestring):
     minsintoday=(int(breakuptime[0]) % 12)*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
     return minsintoday
 
-def calcoffset():
+def calcoffset(timenow):
     # compare rtc to time in file (or if the file doesn't exist, use the initial time file)
     try:
         f = open('lastpulseat.txt', "r")
@@ -243,10 +243,9 @@ def calcoffset():
         lastpulse = minutestoday(initialstring)
         a= True    # a guess, swap if needed
         b= False
-    realtimeclock = rtc.read_time().split(" ")[1]
-    rtcminutestoday = minutestoday(realtimeclock)
+    rtcminutestoday = minutestoday(timenow)
     offset=rtcminutestoday - lastpulse            
-    print('Offset:' + str(offset) + "-" + str(realtimeclock) + " " + str(lastpulseat) + " " + str(rtcminutestoday) + " " + str(lastpulse))
+    print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcminutestoday) + " " + str(lastpulse))
     return offset, lastpulseat, a, b
 
 #---------------- MAIN LOGIC
@@ -311,24 +310,16 @@ if __name__ == '__main__':
             if success:
                 sleep(1) 
                 print(radiotime)
-                realtimeclock=rtc.read_time().split(" ")[1]
-                # calculate the difference between radiotime and rtc
-                # number of minutes between RTC and Radiotimeimport
                 rtc.set_time(radiotime)
                 ledPin.value(1)
-                rtc.read_time()
             else:
-                print('Radio Time Fail, turning off on board LED')
+                print('Radio Time Fail, turning off on board LED as visual cue')
                 ledPin.value(0)
         # Calculate offset by comparing value in file from last pulse to rtc value
-        offset, lasttime, a, b = calcoffset()
+        offset, lasttime, a, b = calcoffset(rtctimestring)
         if offset>=-60 and offset<=0:
             pass
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
-
-
-
-
