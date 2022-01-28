@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# DCF1 receiver module https://www.pollin.de/p/dcf-77-empfangsmodul-dcf1-810054?gclid=EAIaIQobChMIpdOkt7bK5wIViM13Ch0Tsw1dEAQYASABEgKgafD_BwE
+# DCF receiver module https://de.elv.com/dcf-empfangsmodul-dcf-2-091610
 # DCF1 module receives DCF77 signal, see https://en.wikipedia.org/wiki/DCF77
 
 from machine import Pin, I2C
@@ -21,7 +21,7 @@ def detectNewMinute(dcfpin):
     start = ticks_ms()
     breakat = ceil(1000/sleeptime) + 1
     while True:
-        v = dcfpin.value()
+        v = 1-dcfpin.value()
         print("%d" % (v), end="")
         delta = t - ticks_diff(ticks_ms(), start)
         if v == 0:
@@ -88,7 +88,7 @@ def computeTime(dcf):
         delta = cnt * samplespeed - ticks_diff(ticks_ms(), start)
         #print ("delta ms:"+str(delta))
         a.pop(0)
-        a.append(dcf.value())
+        a.append(1-dcf.value())
         if  a[0]==0 and a[1]==1 and sum(a[0:10]) > 7:               # first element 0 second 1 and first 10 has more than 7 ones (remove hardcoding)
             
             if sum(a) > 1000/samplespeed * noisethreshms/1000:      # Anything less than 50 ms is considered noise
@@ -263,8 +263,6 @@ if __name__ == '__main__':
     #ALARM_PIN = 3
     #----------- END RTC PIN ALLOCATION
     
-    # to wake up dcf1 
-    pon_pin = Pin(16, Pin.OUT) 
 
     # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
     dcf = Pin(26, Pin.IN)
