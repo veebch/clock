@@ -81,7 +81,7 @@ def computeTime(dcf):
     timeInfo = []
     start = ticks_ms()
     noisethreshms = 40
-    zerothreshms = 180
+    zerothreshms = 130
     print("Computing time:",samples,"samples @",1000/samplespeed,"samples a second. 100ms would be", str(floor(.1*1000/samplespeed)),"samples. 200ms would be",str(floor(.2*1000/samplespeed)))
     print("Bars show 0 as space and 1 as solid. If signal is classified as ONE then █, if ZERO ▒") 
     while True:
@@ -249,7 +249,7 @@ def calcoffset(timenow):
 #---------------- MAIN LOGIC
 
 if __name__ == '__main__':
-    FORCE_RADIO_UPDATE = False          # Force radio update before anything else
+    FORCE_RADIO_UPDATE = True          # Force radio update before anything else
     REAL_TIME_CLOCK_ATTACHED = True     # Unused for now, but if radio is forced, then you can use the pico's internal rtc (resets when removed from power)
     #------------ Real Time Clock (RTC) PIN ALLOCATION
     #    the first version of the rtc uses i2c1
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     
 
     # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
-    dcf = Pin(26, Pin.IN)
+    dcf = Pin(26, Pin.IN,Pin.PULL_UP, value=0)
     rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
     clock2 = Pin(13, Pin.OUT, value=1)  # Toggle polarity to advance minute ORANGE
@@ -320,4 +320,5 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
+
 
