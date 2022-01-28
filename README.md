@@ -2,9 +2,9 @@
 
 # Clock
 
-Getting a Raspberry Pi Pico and a DCF77 receiver to power a handsome old clock and make it super-accurate, without any internet.
+Getting a Raspberry Pi Pico and a DCF77 receiver to power a handsome old clock and make it super-accurate, without any internet 
 
-The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years. 
+The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years (the DCF77 signal has been broadcasting since the time since the 1970s and in 2021 it was agreed to be left on for at least 10 more years). 
 
 (The United States uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal)
 
@@ -13,7 +13,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - A ferrite receiver (for DCF77 signal)
 - A microcontroller (Raspberry Pi Pico)
 - Real time clock (RTC) (backup for any radio signal issues)
-- 24V DC to 5V DC step down board
+- 24V DC to 5V DC step down board (you can skip this and use the 5v from the pi on the H bridge if you intend to power the pi via USB)
 - H bridge (for the polarity switch that triggers the clock mechanism)
 
 # Video
