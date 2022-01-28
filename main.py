@@ -239,7 +239,7 @@ def calcoffset(timenow):
         initialstring = f.read()
         lastpulseat = initialstring
         lastpulse = minutesince12(initialstring)
-        a= True    # a guess, swap if needed
+        a= True    # for an even number of minutes, for an odd number of minutes reverse this, not coded in because it depends on the wiring
         b= False
     rtcminutesince12 = minutesince12(timenow)
     offset=rtcminutesince12 - lastpulse            
