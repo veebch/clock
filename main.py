@@ -107,7 +107,7 @@ def computeTime(dcf):
                 #break
                 return radiotime, False
             if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
-                print("Error: parity")
+                print("Error: Parity")
                 # break
                 return radiotime, False
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
@@ -117,17 +117,8 @@ def computeTime(dcf):
             wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
             monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
-            if timeInfo[17]==1:
-                season='CEST'
-            elif timeInfo[18]==1:
-                season='CET'
-            else:
-                return radiotime, False
-            #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
             radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
-            #rtc.set_time('13:45:50,Monday,2021-05-24')
-            # print(radiotime)
             # sleep for 1 second and break
             sleep(1)
             return radiotime, True
@@ -214,7 +205,7 @@ def pulseminute(lasttime,a,b):
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
     file.close()
-    # dignified little sleep so we don't upset the clock mechanism
+    # Dignified little sleep so we don't upset the clock mechanism
     sleep(1)
     return
 
@@ -224,7 +215,7 @@ def minutesince12(timestring):
     return minsintoday
 
 def calcoffset(timenow):
-    # compare rtc to time in file (or if the file doesn't exist, use the initial time file)
+    # Compare real time clock to the time in file (or if the file doesn't exist, use the initial time file)
     try:
         f = open('lastpulseat.txt', "r")
         string = f.read().split('\t')
