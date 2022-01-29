@@ -122,7 +122,7 @@ def computeTime(dcf):
             elif timeInfo[18]==1:
                 season='CET'
             else:
-                return radiotime
+                return radiotime, False
             #Now wait for change in minute
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
             radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
@@ -246,6 +246,20 @@ def calcoffset(timenow):
     #print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcminutesince12) + " " + str(lastpulse))
     return offset, lastpulseat, a, b
 
+def dcf77update(dcf):
+    while not detectNewMinute(dcf):
+        pass
+    radiotime, gottime = computeTime(dcf)
+    if gottime==True:
+        sleep(1) 
+        print(radiotime)
+        rtc.set_time(radiotime)
+        ledPin.value(1)
+    else:
+        print('Radio Time Fail, turning off on board LED as visual cue')
+        ledPin.value(0)
+    return gottime
+
 #---------------- MAIN LOGIC
 
 if __name__ == '__main__':
@@ -287,9 +301,7 @@ if __name__ == '__main__':
     except:
         print('Looks like the first (or forced radio) run, setting rtc from radio signal')
         while gottime==False:
-            while not detectNewMinute(dcf):
-                pass
-            radiotime, gottime = computeTime(dcf)
+            gottime=dcf77update(dcf)
 
     #--------------Main loop
     # Super simple:
@@ -301,17 +313,7 @@ if __name__ == '__main__':
         rtctimestring=rtc.read_time().split(" ")[1] # Get the current time string from the rtc
         # run this once a day (at a time that won't cause issues (3:33))- update rtc
         if rtctimestring=="03:33:33":     # The correction in the wee hours of the morning
-            while not detectNewMinute(dcf):
-                pass
-            radiotime, success = computeTime(dcf)
-            if success:
-                sleep(1) 
-                print(radiotime)
-                rtc.set_time(radiotime)
-                ledPin.value(1)
-            else:
-                print('Radio Time Fail, turning off on board LED as visual cue')
-                ledPin.value(0)
+            dcf77update(dcf)
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset(rtctimestring)
         if offset>=-60 and offset<=0:
