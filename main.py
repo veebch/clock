@@ -263,8 +263,7 @@ def dcf77update(dcf):
 #---------------- MAIN LOGIC
 
 if __name__ == '__main__':
-    FORCE_RADIO_UPDATE = True          # Force radio update before anything else
-    REAL_TIME_CLOCK_ATTACHED = True     # Unused for now, but if radio is forced, then you can use the pico's internal rtc (resets when removed from power)
+    FORCE_RADIO_UPDATE = True          # Force radio update on startup
     #------------ Real Time Clock (RTC) PIN ALLOCATION
     #    the first version of the rtc uses i2c1
     I2C_PORT = 1
@@ -282,15 +281,13 @@ if __name__ == '__main__':
     dcf = Pin(26, Pin.IN,Pin.PULL_UP, value=0)
     rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
     ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
-    clock2 = Pin(16, Pin.OUT, value=1)  # Toggle polarity to advance minute ORANGE
-    clock1 = Pin(21, Pin.OUT, value=1)  # Driving the seconds hand YELLOW
-    ledPin(1)                           # A quick flash of the pico's onboard LED, to illustrate life
+    clock2 = Pin(16, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
+    clock1 = Pin(21, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
+    ledPin(1)                                   # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
     print("Startup of DCF77 code. RTC reads:")
     print(rtc.read_time())
-    # Initialise the value for the polarity of the hands
-    # The initial time synchronisation, loop until there is a valid value we can use to update the real time clock 
     gottime=False
     try:
         if FORCE_RADIO_UPDATE:
@@ -312,7 +309,7 @@ if __name__ == '__main__':
     while True:
         rtctimestring=rtc.read_time().split(" ")[1] # Get the current time string from the rtc
         # run this once a day (at a time that won't cause issues (3:33))- update rtc
-        if rtctimestring=="03:33:33":     # The correction in the wee hours of the morning
+        if rtctimestring=="03:33:30":     # The correction in the wee hours of the morning, only try once
             dcf77update(dcf)
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset(rtctimestring)
