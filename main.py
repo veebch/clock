@@ -269,11 +269,11 @@ if __name__ == '__main__':
     
 
     # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
-    dcf = Pin(26, Pin.IN,Pin.PULL_UP, value=0)
+    dcf = Pin(16, Pin.IN,Pin.PULL_UP)
     rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
-    ledPin = Pin(25, mode = Pin.OUT, value = 0) # Onboard led on GPIO 25
-    clock2 = Pin(16, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
-    clock1 = Pin(21, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
+    ledPin = Pin(25, Pin.OUT, value = 0) # Onboard led on GPIO 25
+    clock2 = Pin(14, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
+    clock1 = Pin(13, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
     ledPin(1)                                   # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
@@ -310,7 +310,3 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
-
-
-
-
