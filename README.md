@@ -33,6 +33,11 @@ then send them your Pico using ampy
       sudo ampy -p /dev/ttyACM0 put ./
 
 Edit the file `firstruntime.txt` to show the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code will keep track of time after power-off.
+# Running
+
+If you run while connected to Thonny, you will see the terminal output, showing the signal as it is decoded. If the bars look irregular or have gaps in, then there is an issue with the dcf77 signal. A clear signal will look something like this:
+
+![Action Shot](/images/clockscan.png)
 
 # Code used
 
