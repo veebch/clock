@@ -14,7 +14,7 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - A microcontroller (Raspberry Pi Pico)
 - [Real time clock](https://eckstein-shop.de/WaveSharePrecisionRTCModuleforRaspberryPiPico2COnboardDS3231ChipEN) (RTC) (backup for any radio signal issues)
 - 24V DC to 5V DC step down board (you can skip this if you intend to power the pico via USB)
-- H bridge (for the polarity switch that triggers the clock mechanism)
+- H bridge ([LN298](https://www.reichelt.com/ch/de/entwicklerboards-motodriver2-l298n-debo-motodriver2-p202829.html?PROVID=2808), for the polarity switch that triggers the clock mechanism)
 
 # Video
 
