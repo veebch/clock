@@ -9,11 +9,11 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 (The United States uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal)
 
 # Hardware
-- Old 'nebenuhr' clock with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
+- Old ['nebenuhr' clock](https://www.ebay.de/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=nebenuhr&_sacat=0&LH_TitleDesc=0&_odkw=buerk+uhr&_osacat=0) with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
 - A ferrite receiver (for DCF77 signal)
 - A microcontroller (Raspberry Pi Pico)
 - Real time clock (RTC) (backup for any radio signal issues)
-- 24V DC to 5V DC step down board (you can skip this and use the 5v from the pi on the H bridge if you intend to power the pi via USB)
+- 24V DC to 5V DC step down board (you can skip this if you intend to power the pico via USB)
 - H bridge (for the polarity switch that triggers the clock mechanism)
 
 # Video
