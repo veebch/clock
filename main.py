@@ -70,6 +70,7 @@ def twodigits(digit):    # Takes a single digit integer and turns it into a two 
     return digitstring
 
 # decodes the received signal into a time 
+# This still relies on a relatively clean signal. It would be better to just take 1 second samples and count what's in there. No need to change for now.
 def computeTime(dcf):
     radiotime='failed'
     minutesince12='failed'
@@ -310,8 +311,3 @@ if __name__ == '__main__':
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
         sleep_ms(100)
-
-
-
-
-
