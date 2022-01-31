@@ -2,7 +2,7 @@
 
 # Clock
 
-Getting a Raspberry Pi Pico and a DCF77 receiver to power a handsome old clock and make it super-accurate, without any internet 
+Getting a Raspberry Pi Pico and a radio (DCF77) receiver to power a handsome old clock and make it super-accurate, without any internet 
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal pretty much covers Europe and is accurate to within a second over about 300,000 years (the DCF77 signal has been broadcasting since the time since the 1970s and in 2021 it was agreed to be left on for at least 10 more years). 
 
