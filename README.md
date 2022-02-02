@@ -6,7 +6,7 @@ Reinvigorating a handsome old clock and making it super-accurate, without any in
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal covers most of Europe and is accurate to within a second over about 300,000 years (the DCF77 signal has been broadcasting since the time since the 1973 and in 2021 it was agreed to be continued for at least 10 more years). 
 
-(The United States uses [WWVB](https://en.wikipedia.org/wiki/WWVB) and you could easily adapt the code to that signal)
+(The United States uses [WWVB](https://en.wikipedia.org/wiki/WWVB), United Kingdom uses [MSF](https://en.wikipedia.org/wiki/Time_from_NPL_(MSF)) and Japan uses [JJY](https://en.wikipedia.org/wiki/JJY). You could easily adapt the code to any of those signals)
 
 # Hardware
 - Old ['nebenuhr' clock](https://www.ebay.de/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=nebenuhr&_sacat=0&LH_TitleDesc=0&_odkw=buerk+uhr&_osacat=0) with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
