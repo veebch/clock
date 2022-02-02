@@ -1,6 +1,6 @@
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCz5BOU9J9pB_O0B8-rDjCWQ?label=YouTube&style=social)](https://www.youtube.com/channel/UCz5BOU9J9pB_O0B8-rDjCWQ)
 
-# Clock - A precision 'Mutteruhr' using long wave radio signals
+# Clock
 
 Reinvigorating a handsome old clock and making it super-accurate, without any internet. Uses a Raspberry Pi Pico, a radio antenna and a couple of components to emulate a signal from a Mother clock. 
 
