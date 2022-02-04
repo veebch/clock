@@ -310,4 +310,4 @@ if __name__ == '__main__':
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
-        sleep_ms(100)
+        sleep_ms(100)  # TO DO: replace this with setting an RTCalarm for one minute and putting into a deep sleep
