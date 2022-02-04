@@ -8,7 +8,7 @@ from machine import Pin, I2C
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
-import uasyncio
+#import uasyncio
 
 
 # Loops until a new minute is detected 
