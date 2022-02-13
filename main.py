@@ -125,6 +125,9 @@ def computeTime(dcf):
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
+        if cnt>1000:
+            print('No signal, check cables')
+            return radiotime, False
 
 class ds3231(object):
 #            13:45:00 Mon 24 May 2021
