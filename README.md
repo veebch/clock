@@ -18,12 +18,6 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - H bridge ([LN298](https://www.reichelt.com/ch/de/entwicklerboards-motodriver2-l298n-debo-motodriver2-p202829.html?PROVID=2808)), for the polarity switch that triggers the clock mechanism
 - [Step-up module](https://www.amazon.de/gp/product/B079H3YD8V) to send correct voltage pulse to the clock (replaces the dc power supply used in the video)
 
-# Schematic
-
-The antenna also needs 3.3V power and GND, omitted to keep the diagram tidy. If you're sending more than 12V (we used 24V) to the clock then make sure you remove the 5v jumper from the h-bridge. 
-
-![schematic](/images/circuit.png)
-
 # Video
 
 [![Explainer vid](http://img.youtube.com/vi/ZhPZBuXZctg/0.jpg)](http://www.youtube.com/watch?v=ZhPZBuXZctg "Video Title")
@@ -31,6 +25,13 @@ The antenna also needs 3.3V power and GND, omitted to keep the diagram tidy. If 
 # Building your own clock
 
 Assemble the Pico, step up transformer and H bridge. Note that the voltage of the step up tranformer may vary depending on the clock you're using. 
+
+
+## Schematic
+
+The antenna also needs 3.3V power and GND, omitted to keep the diagram tidy. If you're sending more than 12V (we used 24V) to the clock then make sure you remove the 5v jumper from the h-bridge. 
+
+![schematic](/images/circuit.png)
 
 Copy the files from this repository
 
