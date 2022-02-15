@@ -20,6 +20,8 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 
 # Schematic
 
+Very rough schematic. The antenna also needs 3.3V power and GND, omitted to keep the diagram tidy. If you're sending more than 12V to the clock then make sure you remove the 5v jumper from the h-bridge. 
+
 ![schematic](/images/circuit.png)
 
 # Video
