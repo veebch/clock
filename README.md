@@ -30,7 +30,6 @@ Assemble the Pico, step up transformer and H bridge. Note that the voltage of th
 ## Schematic
 
 The antenna also needs 3.3V power and GND, omitted to keep the diagram tidy. If you're sending more than 12V (we used 24V) to the clock then make sure you remove the 5v jumper from the h-bridge. 
-
 ![schematic](/images/circuit.png)
 
 Copy the files from this repository
