@@ -8,7 +8,7 @@ from machine import Pin, I2C
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
-import uasyncio
+#import uasyncio
 
 
 # Loops until a new minute is detected 
@@ -125,6 +125,9 @@ def computeTime(dcf):
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
+        if cnt>1000:
+            print('No signal, check cables')
+            return radiotime, False
 
 class ds3231(object):
 #            13:45:00 Mon 24 May 2021
@@ -310,4 +313,6 @@ if __name__ == '__main__':
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
-        sleep_ms(100)
+            if offset==1:   # If this is just a standard increment, go to sleep for 59 seconds
+                sleep(59)
+        sleep_ms(10)  # TO DO: replace this with setting an RTCalarm for one minute and putting into a deep sleep
