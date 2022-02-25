@@ -125,7 +125,7 @@ def computeTime(dcf):
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
-        if cnt>1000:
+        if cnt>(1000/samplespeed)*60:
             print('No signal, check cables')
             return radiotime, False
 
