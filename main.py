@@ -313,6 +313,4 @@ if __name__ == '__main__':
         else:
             # Advance the minute hand, make a note of where it is
             pulseminute(lasttime,a,b)
-            if offset==1:   # If this is just a standard increment, go to sleep for 59 seconds
-                sleep(50)
         sleep_ms(10)  # TO DO: replace this with setting an RTCalarm for one minute and putting into a deep sleep
