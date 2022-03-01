@@ -223,8 +223,8 @@ def calcoffset(timenow):
     try:
         f = open('lastpulseat.txt', "r")
         string = f.read().split('\t')
-        a=(string[1]=='True')
-        b=(string[2]=='True')
+        a=(string[1]=='True')           # String to Bool trick
+        b=(string[2]=='True')           # String to Bool trick
         lastpulseat = string[0]
         lastpulse = minutesince12(lastpulseat)
     except:  # open failed
