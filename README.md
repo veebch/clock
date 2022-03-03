@@ -39,7 +39,7 @@ Copy the files from this repository
 
 then send them your Pico using ampy
    
-      sudo ampy -p /dev/ttyACM0 put ./
+      sudo ampy -p /dev/ttyACM0 put ./*
 
 Edit the file `firstruntime.txt` to show the time that the clock is showing before the first run. This *should* be the only time you need to do this, the code will keep track of time after power-off.
 # Running
