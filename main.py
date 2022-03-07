@@ -8,7 +8,6 @@ from machine import Pin, I2C
 from time import sleep, sleep_ms, ticks_ms, ticks_diff
 from math import ceil, floor
 import binascii
-#import uasyncio
 
 
 # Loops until a new minute is detected 
@@ -73,7 +72,7 @@ def twodigits(digit):    # Takes a single digit integer and turns it into a two 
 # This still relies on a relatively clean signal. It would be better to just take 1 second samples and count what's in there. No need to change for now.
 def computeTime(dcf):
     radiotime='failed'
-    minutesince12='failed'
+    pulsessince12='failed'
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 5                                 # time between samples (ms)
     samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
@@ -184,39 +183,49 @@ class ds3231(object):
         #    write alarm time to alarm1 reg
         self.bus.writeto_mem(int(self.address),int(self.alarm1_reg),now_time)
     
-def pulseminute(lasttime,a,b):
-    print('PULSE 1 min')
+def pulsetoclock(lasttime,a,b):
+    print('PULSE')
     # get a b and lastime
     a = not bool(a) # Reverse polarity from the lastpulse 
     b = not bool(b)
     print("Polarity: " + str(a) + str(b))
     clock1(int(a))
     clock2(int(b))
-    sleep_ms(300)
+    sleep_ms(150)
     clock1(0)
     clock2(0)
     splittime=lasttime.split(':')
     lasttimehour=int(splittime[0])
     lasttimemin=int(splittime[1])
-    # Now increment by 1 minute ( bearing in mind that 11:59 + 1 is 00:00 )
-    lasttimemin=(lasttimemin +1) % 60
-    if lasttimemin==0:
-        lasttimehour=lasttimehour + 1
-    lasttimehour=(lasttimehour) % 12
-    # turn the minute motor off and then return the last values
-    newtime= twodigits(lasttimehour) + ":" + twodigits(lasttimemin) + ":00"
+    lasttimesecs=int(splittime[2])
+
+    # Now increment by 1 pulse    
+    delta= lasttimesecs + pulsefrequency
+    inctimesecs=(delta) % 60
+    if (delta // 60) > 0:
+        inctimemin=(lasttimemin + (delta // 60)) % 60
+    else:
+        inctimemin = lasttimemin
+    if (lasttimemin + (delta // 60))>=60:
+        inctimehour=(lasttimehour + 1 ) % 12 # Assumes pluses are never more than an hour apart
+    else:
+        inctimehour=lasttimehour
+
+    newtime= twodigits(inctimehour) + ":" + twodigits(inctimemin) + ":" + twodigits(inctimesecs)
+    print(newtime)
     strngtofile = newtime + '\t' + str(a)+ '\t' + str(b)
     file = open ("lastpulseat.txt", "w+")  #writes to file, even if it doesnt exist
     file.write(strngtofile)
     file.close()
     # Dignified little sleep so we don't upset the clock mechanism
-    sleep(1)
+    sleep(.5)
     return
 
-def minutesince12(timestring):
-    breakuptime =timestring.split(":") 
-    minsintoday=(int(breakuptime[0]) % 12)*60+int(breakuptime[1])   # We'll avoid midnight issues by never using it then *taps temple
-    return minsintoday
+def pulsessince12(timestring):
+    breakuptime =timestring.split(":")
+    secondssince12=(int(breakuptime[0]) % 12)*3600+int(breakuptime[1])*60+int(breakuptime[2])   # We'll avoid midnight issues by never using it then *taps temple
+    pulses=int(secondssince12/pulsefrequency)
+    return pulses
 
 def calcoffset(timenow):
     # Compare real time clock to the time in file (or if the file doesn't exist, use the initial time file)
@@ -226,19 +235,19 @@ def calcoffset(timenow):
         a=(string[1]=='True')           # String to Bool trick
         b=(string[2]=='True')           # String to Bool trick
         lastpulseat = string[0]
-        lastpulse = minutesince12(lastpulseat)
+        lastpulse = pulsessince12(lastpulseat)
     except:  # open failed
         print('file does not exist. Assuming this is the first run')
         # This initial time file has the time that the clock reads on first connection
         f = open('firstruntime.txt', "r")
         initialstring = f.read()
         lastpulseat = initialstring
-        lastpulse = minutesince12(initialstring)
+        lastpulse = pulsessince12(initialstring)
         a= True    # for an even number of minutes, for an odd number of minutes reverse this, not coded in because it depends on the wiring
         b= False
-    rtcminutesince12 = minutesince12(timenow)
-    offset=rtcminutesince12 - lastpulse            
-    #print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcminutesince12) + " " + str(lastpulse))
+    rtcpulsessince12 = pulsessince12(timenow)
+    offset=rtcpulsessince12 - lastpulse            
+    #print('Offset:' + str(offset) + "-" + str(timenow) + " " + str(lastpulseat) + " " + str(rtcpulsessince12) + " " + str(lastpulse))
     return offset, lastpulseat, a, b
 
 def dcf77update(dcf):
@@ -255,29 +264,33 @@ def dcf77update(dcf):
         ledPin.value(0)
     return gottime
 
+pulsefrequency = 30   # Pulse frequency in seconds (>=1 due to rtc constraints and <3600 for sanity)
+
+#------------ Real Time Clock (RTC) PIN ALLOCATION
+#    the first version of the rtc uses i2c1
+I2C_PORT = 1
+I2C_SDA = 6
+I2C_SCL = 7
+#    The newer versions of the RTC use i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
+#I2C_PORT = 0
+#I2C_SDA = 20
+#I2C_SCL = 21
+#ALARM_PIN = 3
+#----------- END RTC PIN ALLOCATION
+
+# Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
+dcf = Pin(16, Pin.IN,Pin.PULL_UP)
+rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
+ledPin = Pin(25, Pin.OUT, value = 0) # Onboard led on GPIO 25
+clock2 = Pin(14, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
+clock1 = Pin(13, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
+
+
 #---------------- MAIN LOGIC
 
-if __name__ == '__main__':
-    FORCE_RADIO_UPDATE = True          # Force radio update on startup
-    #------------ Real Time Clock (RTC) PIN ALLOCATION
-    #    the first version of the rtc uses i2c1
-    I2C_PORT = 1
-    I2C_SDA = 6
-    I2C_SCL = 7
-    #    The newer versions of the RTC use i2c0. If there are issues, try to comment the i2c1 lines and uncomment the i2c0
-    #I2C_PORT = 0
-    #I2C_SDA = 20
-    #I2C_SCL = 21
-    #ALARM_PIN = 3
-    #----------- END RTC PIN ALLOCATION
-    
-
-    # Initialise DCF77 receiver and Real Time Clock and onboard LED (we'll use this to show limited diagnostic info)
-    dcf = Pin(16, Pin.IN,Pin.PULL_UP)
-    rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
-    ledPin = Pin(25, Pin.OUT, value = 0) # Onboard led on GPIO 25
-    clock2 = Pin(14, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
-    clock1 = Pin(13, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
+def main():
+ 
+    FORCE_RADIO_UPDATE = False          # Force radio update on startup
     ledPin(1)                                   # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
@@ -297,8 +310,8 @@ if __name__ == '__main__':
 
     #--------------Main loop
     # Super simple:
-    # 1. Is the clock showing the right time according to the RTC (or is it more than an hour fast)? 
-    # 2. If no advance a minute, otherwise, do nothing
+    # 1. Is the clock showing the right time (within a pulse) according to the RTC (or is it more than an hour fast)? 
+    # 2. If no advance a pulse, otherwise, do nothing (clocks that can go backwards (eg Seiko) are not considered in this simple first version)
     # 3. Goto 1
 
     while True:
@@ -308,9 +321,12 @@ if __name__ == '__main__':
             dcf77update(dcf)
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset(rtctimestring)
-        if offset>=-60 and offset<=0:
+        if offset>=-60*60/pulsefrequency and offset<=0:
             pass
         else:
-            # Advance the minute hand, make a note of where it is
-            pulseminute(lasttime,a,b)
-        sleep_ms(10)  # TO DO: replace this with setting an RTCalarm for one minute and putting into a deep sleep
+            # Advance the clock, make a note of where it is currently
+            pulsetoclock(lasttime,a,b)
+        sleep_ms(10)  
+
+if __name__ == '__main__':
+    main()
