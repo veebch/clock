@@ -264,7 +264,7 @@ def dcf77update(dcf):
         ledPin.value(0)
     return gottime
 
-pulsefrequency = 30   # Pulse frequency in seconds (>=1 due to rtc constraints and <3600 for sanity)
+pulsefrequency = 60   # Pulse frequency in seconds (>=1 due to rtc constraints and <3600 for sanity)
 
 #------------ Real Time Clock (RTC) PIN ALLOCATION
 #    the first version of the rtc uses i2c1
@@ -282,15 +282,15 @@ I2C_SCL = 7
 dcf = Pin(16, Pin.IN,Pin.PULL_UP)
 rtc = ds3231(I2C_PORT  ,I2C_SCL,I2C_SDA)
 ledPin = Pin(25, Pin.OUT, value = 0) # Onboard led on GPIO 25
-clock2 = Pin(14, Pin.OUT, value=1)          # Toggle polarity to advance minute ORANGE
-clock1 = Pin(13, Pin.OUT, value=1)          # Driving the seconds hand YELLOW
+clock2 = Pin(14, Pin.OUT, value=0)          # Toggle polarity to advance 
+clock1 = Pin(13, Pin.OUT, value=0)          
 
 
 #---------------- MAIN LOGIC
 
 def main():
  
-    FORCE_RADIO_UPDATE = False          # Force radio update on startup
+    FORCE_RADIO_UPDATE = True           # Force radio update on startup
     ledPin(1)                                   # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
