@@ -119,8 +119,8 @@ def computeTime(dcf):
             jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
             print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
             radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
-            # sleep for 1 second and break
-            sleep(1)
+            # uncomment to sleep for 1 second before break
+            # sleep(1)
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
