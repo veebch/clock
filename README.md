@@ -18,9 +18,12 @@ The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that c
 - H bridge ([LN298](https://www.reichelt.com/ch/de/entwicklerboards-motodriver2-l298n-debo-motodriver2-p202829.html?PROVID=2808)), for the polarity switch that triggers the clock mechanism
 - [Step-up module](https://www.amazon.de/gp/product/B079H3YD8V) to send correct voltage pulse to the clock (or a dc power supply, as used in the video)
 
-# Video
+# Videos
 
+An overview of how the clcok works:
 [![Explainer vid](http://img.youtube.com/vi/ZhPZBuXZctg/0.jpg)](http://www.youtube.com/watch?v=ZhPZBuXZctg "Video Title")
+How the pieces are assembled:
+[![Explainer vid II](http://img.youtube.com/vi/vrSi5gCIbSA/0.jpg)](http://www.youtube.com/watch?v=vrSi5gCIbSA "Video Title")
 
 # Building your own clock
 
