@@ -110,7 +110,7 @@ def computeTime(dcf):
                 print("Error: Parity")
                 # break
                 return radiotime, False
-            # This is specific to dcf77, to use for any other signal, put the recipe specific to that signal in. 
+            # This is specific to dcf77, to use for any other signal, put the recipe specific to that signal in (Wikipedia has them all). 
             # If you do, it would be eversonice if you shared it so that the code can be used more widely
             minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
             stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
