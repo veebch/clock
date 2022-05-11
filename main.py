@@ -52,7 +52,7 @@ def doy2dmy(doy, year, leapyear):
     # Find out what day it was on Jan 1st of this year, passing a tuple with zeros for doy and weekday and then then inverting it back
     # automagically returns the day of week. Now we just need to get the day of month and month
     jan1st = localtime(mktime((year,1,1,0,0,0,0,0)))
-    print(jan1st)
+#   print(jan1st)
     months = [31,28+leapyear,31,30,31,30,31,31,30,31,30,31]
     yearint = csum(months)
     moy = 0
