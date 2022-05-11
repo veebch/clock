@@ -5,10 +5,10 @@
 # DCF1 module receives DCF77 signal, see https://en.wikipedia.org/wiki/DCF77
 
 from machine import Pin, I2C
-from time import sleep, sleep_ms, ticks_ms, ticks_diff
+from time import sleep, sleep_ms, ticks_ms, ticks_add, ticks_diff, mktime, localtime
 from math import ceil, floor
 import binascii
-
+region = 'DCF77' # for US clocks, set to WWVB
 
 # Loops until a new minute is detected 
 def detectNewMinute(dcfpin):
@@ -37,16 +37,37 @@ def detectNewMinute(dcfpin):
 
 # returns weekday that corresponds to i or "Invalid day of week"
 def weekday(i):
-        switcher={
-                1:'Monday',
-                2:'Tuesday',
-                3:'Wednesday',
-                4:'Thursday',
-                5:'Friday',
-                6:'Saturday',
-                7:'Sunday'
-             }
-        return switcher.get(i,"Invalid day of week")
+    switcher={
+            1:'Monday',
+            2:'Tuesday',
+            3:'Wednesday',
+            4:'Thursday',
+            5:'Friday',
+            6:'Saturday',
+            7:'Sunday'
+         }
+    return switcher.get(i,"Invalid day of week")
+
+def doy2dmy(doy, year, leapyear):
+    # Find out what day it was on Jan 1st of this year, passing a tuple with zeros for doy and weekday and then then inverting it back
+    # automagically returns the day of week. Now we just need to get the day of month and month
+    jan1st = localtime(mktime((year,1,1,0,0,0,0,0)))
+    print(jan1st)
+    months = [31,28+leapyear,31,30,31,30,31,31,30,31,30,31]
+    yearint = csum(months)
+    moy = 0
+    dom = doy
+    for i in range(0, len(yearint)):
+        firstofmonth = yearint[i]
+        if doy -  firstofmonth  > 0:
+            month = i
+            print("Month:",month+1)
+            dom = doy -  firstofmonth
+            moy = i + 1
+    print(dom, moy + 1, year)
+    dow = (doy + jan1st[6]) % 7
+    print (weekday(dow))
+    return dom, moy+1, dow
 
 def atobar(a, val):
     stringa=''
@@ -102,26 +123,37 @@ def computeTime(dcf):
                 # Flash LED while getting radio signal
                 ledPin.toggle()
         if bitNum == 59:
-            if timeInfo[0] != 0 or timeInfo[20] != 1:
-                print("Error: Check bits not set to correct value")
-                #break
-                return radiotime, False
-            if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
-                print("Error: Parity")
-                # break
-                return radiotime, False
-            # This is specific to dcf77, to use for any other signal, put the recipe specific to that signal in (Wikipedia has them all). 
-            # If you do, it would be eversonice if you shared it so that the code can be used more widely
-            minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
-            stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
-            tag       =  timeInfo[36] + 2 * timeInfo[37] + 4 * timeInfo[38] + 8 * timeInfo[39] + 10 * timeInfo[40] + 20 * timeInfo[41]
-            wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
-            monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
-            jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
-            print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
-            radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
-            # uncomment to sleep for 1 second before break
-            # sleep(1)
+            if region == "DCF77":
+                if timeInfo[0] != 0 or timeInfo[20] != 1:
+                    print("Error: Check bits not set to correct value")
+                    #break
+                    return radiotime, False
+                if (sum(timeInfo[21:29]) % 2 == 1) or (sum(timeInfo[29:36])% 2 == 1) or (sum(timeInfo[36:59])% 2 == 1) :
+                    print("Error: Parity")
+                    # break
+                    return radiotime, False
+                minute    =  timeInfo[21] + 2 * timeInfo[22] + 4 * timeInfo[23] + 8 * timeInfo[24] + 10 * timeInfo[25] + 20 * timeInfo[26] + 40 * timeInfo[27]
+                stunde    =  timeInfo[29] + 2 * timeInfo[30] + 4 * timeInfo[31] + 8 * timeInfo[32] + 10 * timeInfo[33] + 20 * timeInfo[34]
+                tag       =  timeInfo[36] + 2 * timeInfo[37] + 4 * timeInfo[38] + 8 * timeInfo[39] + 10 * timeInfo[40] + 20 * timeInfo[41]
+                wochentag =  timeInfo[42] + 2 * timeInfo[43] + 4 * timeInfo[44]
+                monat     =  timeInfo[45] + 2 * timeInfo[46] + 4 * timeInfo[47] + 8 * timeInfo[48] + 10 * timeInfo[49]
+                jahr      =  timeInfo[50] + 2 * timeInfo[51] + 4 * timeInfo[52] + 8 * timeInfo[53] + 10 * timeInfo[54] + 20 * timeInfo[55] + 40 * timeInfo[56] + 80 * timeInfo[57]
+                print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+jahr, monat, tag, weekday(wochentag), stunde, minute, 0, 0))            
+                radiotime= twodigits(stunde)+ ":" + twodigits(minute) + ":00," + weekday(wochentag) + "," + str(2000+jahr) + '-' + twodigits(monat)+ '-' + twodigits(tag)
+            if region == "WWVB":
+                if timeInfo[10] != 0 or timeInfo[11] != 0 or timeInfo[20] != 0 or timeInfo[21] != 0 or timeInfo[34] != 0 or timeInfo[35] != 0 or timeInfo[44] != 0 or timeInfo[54] != 0:
+                    print("Error: Check bits not set to correct value")
+                    #break
+                    return radiotime, False
+                minute    =  timeInfo[8] + 2 * timeInfo[7] + 4 * timeInfo[6] + 8 * timeInfo[5] + 10 * timeInfo[3] + 20 * timeInfo[2] + 40 * timeInfo[1]
+                hour      =  timeInfo[18] + 2 * timeInfo[17] + 4 * timeInfo[16] + 8 * timeInfo[15] + 10 * timeInfo[13] + 20 * timeInfo[12]
+                dayofyear =  timeInfo[33] + 2 * timeInfo[32] + 4 * timeInfo[31] + 8 * timeInfo[30] + 10 * timeInfo[28] + 20 * timeInfo[27]+ 40 * timeInfo[26] + 80 * timeInfo[25] + 100 * timeInfo[23] + 200 * timeInfo[22]
+                year      =  timeInfo[53] + 2 * timeInfo[52] + 4 * timeInfo[51] + 8 * timeInfo[50] + 10 * timeInfo[48] + 20 * timeInfo[47] + 40 * timeInfo[46] + 80 * timeInfo[45]
+                leapyear  =  timeInfo[55] 
+                # Now we just need to derive the things we need from the day of year and year
+                dayofmonth, month, dayofweek = doy2dmy(dayofyear, year, leapyear)
+                print("{:d}/{:02d}/{:02d} ({:s}) {:02d}:{:02d}:{:02d}".format(2000+year, month, dayofmonth, weekday(dayofweek), hour, minute, 0, 0))            
+                radiotime= twodigits(hour)+ ":" + twodigits(minute) + ":00," + weekday(dayofweek) + "," + str(2000+year) + '-' + twodigits(month)+ '-' + twodigits(dayofmonth)
             return radiotime, True
         sleep_ms(samplespeed + delta)
         cnt += 1
