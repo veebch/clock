@@ -92,36 +92,34 @@ def twodigits(digit):    # Takes a single digit integer and turns it into a two 
 # decodes the received signal into a time 
 # This still relies on a relatively clean signal. It would be better to just take 1 second samples and count what's in there. No need to change for now.
 def computeTime(dcf):
+    sleep(.5)
     radiotime='failed'
     pulsessince12='failed'
     minute, stunde, tag, wochentag, monat, jahr = -1, -1, -1, -1, -1, -1
     samplespeed = 5                                 # time between samples (ms)
-    samples = floor(1000/samplespeed * .35)         # sample points taken over .35 of a second 
-    a = [0] * samples
+    a = [] 
     secs, bitNum, cnt = 0, 0, 0
     timeInfo = []
     start = ticks_ms()
-    noisethreshms = 40
-    zerothreshms = 130
-    print("Computing time:",samples,"samples @",1000/samplespeed,"samples a second. 100ms would be", str(floor(.1*1000/samplespeed)),"samples. 200ms would be",str(floor(.2*1000/samplespeed)))
+    zerothreshms = 140
+    print("Computing time:",1000/samplespeed,"samples a second. 100ms would be", str(floor(.1*1000/samplespeed)),"samples. 200ms would be",str(floor(.2*1000/samplespeed)))
     print("Bars show 0 as space and 1 as solid. If signal is classified as ONE then █, if ZERO ▒") 
     while True:
         delta = cnt * samplespeed - ticks_diff(ticks_ms(), start)
         #print ("delta ms:"+str(delta))
-        a.pop(0)
         a.append(1-dcf.value())
-        if  a[0]==0 and a[1]==1 and sum(a[0:10]) > 7:               # first element 0 second 1 and first 10 has more than 7 ones (remove hardcoding)
-            
-            if sum(a) > 1000/samplespeed * noisethreshms/1000:      # Anything less than 50 ms is considered noise
-                if sum(a) <= 1000/samplespeed * zerothreshms/1000:   # Anything less than 140 ms is a zero
-                    timeInfo.append(0)
-                else:
-                    timeInfo.append(1)
-                bar= atobar(a,timeInfo[bitNum])   
-                print(str(bitNum) + '\t'+ bar)
-                bitNum += 1
-                # Flash LED while getting radio signal
-                ledPin.toggle()
+        if len(a)== int(1000/samplespeed) :               # samples for second
+            #print(a)
+            if sum(a) <= zerothreshms/samplespeed:   # Anything less than zerothreshms is a zero
+                timeInfo.append(0)
+                barcolour="▒"
+            else:
+                timeInfo.append(1)
+                barcolour="█"
+            print(str(bitNum) + '\t'+ barcolour*int(sum(a)))
+            bitNum += 1
+            a= []
+
         if bitNum == 59:
             if region == "DCF77":
                 if timeInfo[0] != 0 or timeInfo[20] != 1:
@@ -323,7 +321,7 @@ clock1 = Pin(13, Pin.OUT, value=0)
 
 def main():
  
-    FORCE_RADIO_UPDATE = True           # Force radio update on startup
+    FORCE_RADIO_UPDATE = True                   # Force radio update on startup
     ledPin(1)                                   # A quick flash of the pico's onboard LED, to illustrate life
     sleep(.3)
     ledPin(0)
@@ -363,3 +361,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
