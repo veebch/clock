@@ -69,19 +69,6 @@ def doy2dmy(doy, year, leapyear):
     print (weekday(dow))
     return dom, moy+1, dow
 
-def atobar(a, val):
-    stringa=''
-    if val==0:
-        block = '▒'
-    else:
-        block = '█'
-    for i in range (1,len(a)):
-        if a[i]==1:
-            stringa += block
-        else:
-            stringa += ' '
-    return stringa
-
 
 def twodigits(digit):    # Takes a single digit integer and turns it into a two digit string (or a two digit number and does nothing to it). 
     digitstring=str(digit)        
