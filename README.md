@@ -24,7 +24,7 @@ The script also has code for [WWVB](https://en.wikipedia.org/wiki/WWVB), the sig
 
 # Videos
 
-An overview of how the clcok works:
+An overview of how the clock works:
 
 [![Explainer vid](http://img.youtube.com/vi/ZhPZBuXZctg/0.jpg)](http://www.youtube.com/watch?v=ZhPZBuXZctg "Video Title")
 
