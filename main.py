@@ -209,7 +209,7 @@ def pulsetoclock(lasttime,a,b):
     print("Polarity: " + str(a) + str(b))
     clock1(int(a))
     clock2(int(b))
-    sleep_ms(150)
+    sleep_ms(1000) # 1 second pulse
     clock1(0)
     clock2(0)
     splittime=lasttime.split(':')
