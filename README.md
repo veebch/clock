@@ -10,7 +10,7 @@ Reinvigorating/ recycling a handsome old clock and making it super-accurate, wit
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal covers most of Europe and is accurate to within a second over about 300,000 years (the DCF77 signal has been broadcasting the time since 1973 and in 2021 it was agreed to be continued for at least 10 more years). 
 
-The script also has code for [WWVB](https://en.wikipedia.org/wiki/WWVB), the signal used in the United States. To use WWVB, change the `region` parameter in main.py from `DCF77` to `WWVB`. If you test it and it works, let me know.
+The script also has (untested) code for [WWVB](https://en.wikipedia.org/wiki/WWVB), the signal used in the United States. To apply WWVB, change the `region` parameter in main.py from `DCF77` to `WWVB`. If you test it and it works, let me know.
 
 (Japan uses [JJY](https://en.wikipedia.org/wiki/JJY). Adding code for this is on the todo list)
 
