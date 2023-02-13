@@ -16,7 +16,7 @@ The script also has (untested) code for [WWVB](https://en.wikipedia.org/wiki/WWV
 
 # Hardware
 - Old ['nebenuhr' clock](https://www.ebay.de/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=nebenuhr&_sacat=0&LH_TitleDesc=0&_odkw=buerk+uhr&_osacat=0) with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
-- A ferrite receiver [for the DCF77 signal](https://de.elv.com/dcf-empfangsmodul-dcf-2-091610) (or [one for the WWVB signal](https://tinkersphere.com/sensors/1517-wwvb-nist-radio-time-receiver-kit.html))
+- A ferrite receiver [for the DCF77 signal](https://de.elv.com/dcf-empfangsmodul-dcf-2-091610 if you're in Europe) (or [one for the WWVB signal](https://tinkersphere.com/sensors/1517-wwvb-nist-radio-time-receiver-kit.html) if you're in the US)
 - A microcontroller (Raspberry Pi Pico)
 - [Real time clock](https://eckstein-shop.de/WaveSharePrecisionRTCModuleforRaspberryPiPico2COnboardDS3231ChipEN) (RTC) (backup for any radio signal issues)
 - H bridge ([LN298](https://www.reichelt.com/ch/de/entwicklerboards-motodriver2-l298n-debo-motodriver2-p202829.html?PROVID=2808)), for the polarity switch that triggers the clock mechanism
