@@ -64,7 +64,7 @@ The DCF77 part of the code was based on [demogorgi/set-rtc-using-dcf77-via-dcf1]
 
 # To Do
 
-Make a wifi version that syncs the time via ntp and runs a web server for tweaks.
+Make a wifi version that syncs the time via ntp and runs a web server for easy tweaks to the time via smartphone.
 
 # Licence 
 
