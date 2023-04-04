@@ -16,7 +16,9 @@ The script also has (untested) code for [WWVB](https://en.wikipedia.org/wiki/WWV
 
 ## Internet Time
 
-A simpler variation that uses a Pico W. There is no need for a Real Time Clock or Ferrite receiver as everything is done with a quick connect to WiFi.
+A simpler variation that uses a Pico W. 
+
+There is no need for a Real Time Clock or Ferrite receiver as everything is done with a quick connect to WiFi.
 To use this, save the code in webtime.py as main.py on the Pico W instead. You will also need to save your WiFi login credentials as secrets.py in the format shown in `secrets_example.py`.
 
 # Hardware
