@@ -21,9 +21,9 @@ To use this, save the code in webtime.py as main.py on the Pico W instead. You w
 
 # Hardware
 - Old ['nebenuhr' clock](https://www.ebay.de/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=nebenuhr&_sacat=0&LH_TitleDesc=0&_odkw=buerk+uhr&_osacat=0) with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
-- A ferrite receiver [for the DCF77 signal](https://de.elv.com/dcf-empfangsmodul-dcf-2-091610) if you're in Europe (or [one for the WWVB signal](https://tinkersphere.com/sensors/1517-wwvb-nist-radio-time-receiver-kit.html) if you're in the US)
-- A microcontroller (Raspberry Pi Pico)
-- [Real time clock](https://eckstein-shop.de/WaveSharePrecisionRTCModuleforRaspberryPiPico2COnboardDS3231ChipEN) (RTC) (backup for any radio signal issues)
+- A ferrite receiver [for the DCF77 signal](https://de.elv.com/dcf-empfangsmodul-dcf-2-091610) if you're in Europe (or [one for the WWVB signal](https://tinkersphere.com/sensors/1517-wwvb-nist-radio-time-receiver-kit.html) if you're in the US)... Not needed if you're using Pico W
+- A microcontroller (Raspberry Pi Pico or Pico W)
+- [Real time clock](https://eckstein-shop.de/WaveSharePrecisionRTCModuleforRaspberryPiPico2COnboardDS3231ChipEN) (RTC) (backup for any radio signal issues)... Not needed if you're using Pico W
 - H bridge ([LN298](https://www.reichelt.com/ch/de/entwicklerboards-motodriver2-l298n-debo-motodriver2-p202829.html?PROVID=2808)), for the polarity switch that triggers the clock mechanism
 - [Step-up module](https://www.amazon.de/gp/product/B079H3YD8V) to send correct voltage pulse to the clock (or a dc power supply, as used in the video)
 
