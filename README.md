@@ -2,6 +2,10 @@
 
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCz5BOU9J9pB_O0B8-rDjCWQ?label=YouTube&style=social)](https://www.youtube.com/channel/UCz5BOU9J9pB_O0B8-rDjCWQ)
 
+
+[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/v_e_e_b/)
+
+
 # Clock
 
 Reinvigorating/ recycling a handsome old clock and making it super-accurate, internet optional. Uses a Raspberry Pi Pico and a radio antenna (**or a Pico W and no radio antenna**) to emulate a signal from a Mother clock. You can define the pulse interval as a parameter, so it works with a broad range of clocks (most take 60 seconds intervals, but some take 30 second or 1 second pulses).
