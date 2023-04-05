@@ -6,7 +6,7 @@
 
 Reinvigorating/ recycling a handsome old clock and making it super-accurate, internet optional. Uses a Raspberry Pi Pico and a radio antenna (**or a Pico W and no radio antenna**) to emulate a signal from a Mother clock. You can define the pulse interval as a parameter, so it works with a broad range of clocks (most take 60 seconds intervals, but some take 30 second or 1 second pulses).
 
-## European or US radio signals
+## European or US Radio Signals
 
 The [DCF77 signal](https://en.wikipedia.org/wiki/DCF77) is a radio signal that carries information from some Atomic Clocks. The signal covers most of Europe and is accurate to within a second over about 300,000 years (the DCF77 signal has been broadcasting the time since 1973 and in 2021 it was agreed to be continued for at least 10 more years). 
 
@@ -14,7 +14,7 @@ The script also has (untested) code for [WWVB](https://en.wikipedia.org/wiki/WWV
 
 (Japan uses [JJY](https://en.wikipedia.org/wiki/JJY). Adding code for this is on the todo list)
 
-## Internet Time
+## Internet Version
 
 A variation that involves WiFi, fewer components, less code and uses a Pico W. 
 
