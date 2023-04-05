@@ -55,6 +55,13 @@ Copy the files from this repository
       git clone https://github.com/veebch/clock
       cd clock
 
+If you're running the code on a Pico W and want to sync to time online
+      
+      mv webtime.py main.py
+      mv secrets_example.py secrets.py
+
+and edit secrets.py so that it contains your WiFi credentials.
+
 then send them your Pico using ampy
    
       ampy -p /dev/ttyACM0 put ./*
