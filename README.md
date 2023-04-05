@@ -55,7 +55,7 @@ Copy the files from this repository
       git clone https://github.com/veebch/clock
       cd clock
 
-If you're running the code on a Pico W and want to sync to time online
+**Only if you're running the code on a Pico W and want to sync to time online**
       
       mv webtime.py main.py
       mv secrets_example.py secrets.py
