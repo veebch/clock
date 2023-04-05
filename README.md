@@ -62,7 +62,9 @@ Copy the files from this repository
 
 and edit secrets.py so that it contains your WiFi credentials.
 
-then send them your Pico using ampy
+### Transfer files
+
+Send the files to your Pico using ampy
    
       ampy -p /dev/ttyACM0 put ./*
 
