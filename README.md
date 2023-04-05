@@ -19,7 +19,8 @@ The script also has (untested) code for [WWVB](https://en.wikipedia.org/wiki/WWV
 A variation that involves WiFi, fewer components, less code and uses a Pico W. 
 
 There is no need for a Real Time Clock (RTC) or Ferrite receiver as everything is done with a quick connect to WiFi and uses the Pico's RTC.
-To use this, save the code in webtime.py as main.py on the Pico W instead. You will also need to save your WiFi login credentials as secrets.py in the format shown in `secrets_example.py`.
+
+To use this, save the code in `webtime.py` as `main.py` on the Pico W. You will also need to save your WiFi login credentials as `secrets.py` on the Pico W in the format shown in `secrets_example.py`.
 
 # Hardware
 - Old ['nebenuhr' clock](https://www.ebay.de/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313&_nkw=nebenuhr&_sacat=0&LH_TitleDesc=0&_odkw=buerk+uhr&_osacat=0) with secondary mechanism (a mechanism that is controlled by pulses from the mother-clock)
