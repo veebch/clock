@@ -4,7 +4,7 @@
 
 # Clock
 
-Reinvigorating/ recycling a handsome old clock and making it super-accurate, internet optional. Uses a Raspberry Pi Pico and a radio antenna (or a Pico W and no radio antenna) to emulate a signal from a Mother clock. You can define the pulse interval as a parameter, so it works with a broad range of clocks (most take 60 seconds intervals, but some take 30 second or 1 second pulses).
+Reinvigorating/ recycling a handsome old clock and making it super-accurate, internet optional. Uses a Raspberry Pi Pico and a radio antenna (**or a Pico W and no radio antenna**) to emulate a signal from a Mother clock. You can define the pulse interval as a parameter, so it works with a broad range of clocks (most take 60 seconds intervals, but some take 30 second or 1 second pulses).
 
 ## European or US radio signals
 
