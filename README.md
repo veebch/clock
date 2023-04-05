@@ -77,7 +77,7 @@ Edit the file `firstruntime.txt` to show the time that the clock is showing befo
 The code in main.py executes as soon as the Pico is powered on.
 
 
-If you run while connected to Thonny then you will see the terminal output. On the radio version this shows the signal as it is decoded. If the bars look irregular or have gaps in, then there is an issue with the dcf77 signal. A clear signal will look something like this:
+If you run while connected to Thonny then you will see the terminal output. On the radio version this shows the signal as it is decoded. If the bars look irregular or have gaps in, then there is an issue with the radio signal. A clear signal will look something like this:
 
 ![Action Shot](/images/clockscan.png)
 
