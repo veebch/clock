@@ -147,9 +147,9 @@ def main():
     # 3. Goto 1
 
     while True:
-        rtctimestring=str(time.localtime()[3])+':'+str(time.localtime()[4])+':'+str(time.localtime()[5]) # Get the current time string from the rtc
+        rtctimestring=twodigits(time.localtime()[3])+':'+twodigits(time.localtime()[4])+':'+twodigits(time.localtime()[5]) # Get the current time string from the rtc
         # run this once a day (at a time that won't cause issues (3:33))- update rtc
-        if rtctimestring=="03:33:30":     # reset daily. This will force a quick reconnect to wifi, and update the RTC 
+        if rtctimestring=="03:00:00":     # reset daily. This will force a quick reconnect to wifi, and update the RTC 
             machine.reset()
         # Calculate offset by comparing value in file from last pulse to rtc value
         offset, lasttime, a, b = calcoffset(rtctimestring)
