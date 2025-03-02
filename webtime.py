@@ -161,26 +161,40 @@ def pulsessince12(timestring):
 def calcoffset(timenow):
     try:
         with open('lastpulseat.txt', "r") as f:
-            string = f.read().split('\t')
-            a = (string[1] == 'True')
-            b = (string[2] == 'True')
-            lastpulseat = string[0]
-            lastpulse = pulsessince12(lastpulseat)
+            string = f.read().strip().split('\t')
+
+        if len(string) < 3:
+            raise ValueError("Insufficient data in lastpulseat.txt")
+
+        lastpulseat = string[0]
+        a = string[1].strip().lower() == 'true'
+        b = string[2].strip().lower() == 'true'
+        lastpulse = pulsessince12(lastpulseat)
+
     except FileNotFoundError:
         print('File does not exist. Assuming this is the first run')
-        with open('firstruntime.txt', "r") as f:
-            initialstring = f.read()
-            lastpulseat = initialstring
-            lastpulse = pulsessince12(initialstring)
-            a = True  # Adjust based on clock wiring
-            b = False
+
+        try:
+            with open('firstruntime.txt', "r") as f:
+                initialstring = f.read().strip()
+        except FileNotFoundError:
+            print("Error: 'firstruntime.txt' is also missing.")
+            return None, None, None, None
+
+        lastpulseat = initialstring
+        lastpulse = pulsessince12(initialstring)
+        a = True  # Adjust based on clock wiring
+        b = False
+
     except Exception as e:
         print(f"Error reading pulse file: {e}")
         return None, None, None, None
 
     rtcpulsessince12 = pulsessince12(timenow)
     offset = rtcpulsessince12 - lastpulse
+
     return offset, lastpulseat, a, b
+
 
 # These are the pins where you toggle polarity to advance the clock
 clock2 = Pin(14, Pin.OUT, value=0)
