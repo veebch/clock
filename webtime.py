@@ -171,13 +171,13 @@ def calcoffset(timenow):
         b = string[2].strip().lower() == 'true'
         lastpulse = pulsessince12(lastpulseat)
 
-    except FileNotFoundError:
+    except OSError:  # MicroPython does not support FileNotFoundError
         print('File does not exist. Assuming this is the first run')
 
         try:
             with open('firstruntime.txt', "r") as f:
                 initialstring = f.read().strip()
-        except FileNotFoundError:
+        except OSError:  # Catch missing 'firstruntime.txt' as well
             print("Error: 'firstruntime.txt' is also missing.")
             return None, None, None, None
 
@@ -194,6 +194,7 @@ def calcoffset(timenow):
     offset = rtcpulsessince12 - lastpulse
 
     return offset, lastpulseat, a, b
+
 
 
 # These are the pins where you toggle polarity to advance the clock
