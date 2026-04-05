@@ -1,0 +1,310 @@
+################################################################################
+# Secondary Clock Controller — ESPHome configuration
+# ESP32 port of https://github.com/veebch/clock
+#
+# Drives a vintage secondary (slave) clock mechanism by emulating the
+# alternating polarity pulses of a mother clock.
+#
+# Board: ESP32 DevKit C V4 (ESP32-WROOM-32D) or equivalent
+#
+# Pin assignments:
+#   GPIO  2  — Onboard LED (status indicator)
+#   GPIO 13  — Clock output A (H-bridge / relay in1)
+#   GPIO 14  — Clock output B (H-bridge / relay in2)
+#
+# Wiring is identical to the Pico version — GPIO 13 and 14 connect to the
+# H-bridge or SPDT relay exactly as described in the main README.
+#
+# No DS3231 RTC module required. Time is sourced from Home Assistant,
+# with SNTP as fallback. Clock face position and polarity state survive
+# reboots via ESP32 NVS flash storage.
+#
+# Setup:
+#   1. Copy secrets_example.yaml to secrets.yaml and fill in your values.
+#   2. Set your timezone below (POSIX tz string or IANA name).
+#   3. Set pulsefrequency below to match your clock mechanism (default 60s).
+#   4. Flash via USB the first time: esphome run esp32-esphome.yaml
+#   5. Subsequent updates are OTA.
+################################################################################
+
+substitutions:
+  # Pulse interval in seconds. Most secondary clocks use 60s; some use 30s or 1s.
+  pulse_frequency: "60"
+  # Your local IANA timezone string — see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  timezone: "Australia/Sydney"
+
+esphome:
+  name: secondary-clock
+  friendly_name: Secondary Clock
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+  level: INFO
+
+# ── CONNECTIVITY ──────────────────────────────────────────────────────────────
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # Fallback AP if WiFi is unavailable — connect to configure
+  ap:
+    ssid: "Clock-Fallback"
+    password: "clocksetup"
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# Built-in web interface — browse to the device IP for controls
+web_server:
+  port: 80
+
+# ── TIME ──────────────────────────────────────────────────────────────────────
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: $timezone
+    on_time_sync:
+      then:
+        - logger.log: "Time synced from Home Assistant"
+        - light.turn_on: status_led
+        - delay: 500ms
+        - light.turn_off: status_led
+
+# ── GPIO OUTPUTS ──────────────────────────────────────────────────────────────
+
+output:
+  - platform: gpio
+    pin: GPIO13
+    id: clock_out_1
+  - platform: gpio
+    pin: GPIO14
+    id: clock_out_2
+  - platform: gpio
+    pin: GPIO2
+    id: led_output
+
+light:
+  - platform: binary
+    name: "Status LED"
+    id: status_led
+    output: led_output
+    internal: true
+
+# ── GLOBAL STATE (persisted to NVS flash, survives reboot) ───────────────────
+
+globals:
+  # Minutes past 12:00 on the physical clock face (0–719, i.e. 12-hour cycle)
+  - id: clock_face_minutes
+    type: int
+    restore_value: true
+    initial_value: '0'
+  # Polarity state — alternates with each pulse, as required by the mechanism
+  - id: polarity_a
+    type: bool
+    restore_value: true
+    initial_value: 'true'
+  - id: polarity_b
+    type: bool
+    restore_value: true
+    initial_value: 'false'
+  # Sync pause flag — suppresses auto-advance while setting the face time
+  - id: sync_paused
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+# ── PULSE SCRIPT ──────────────────────────────────────────────────────────────
+
+script:
+  - id: pulse_clock
+    mode: queued
+    max_runs: 10
+    then:
+      # Toggle polarity for alternating drive
+      - lambda: |-
+          id(polarity_a) = !id(polarity_a);
+          id(polarity_b) = !id(polarity_b);
+          ESP_LOGI("clock", "PULSE — polarity A=%d B=%d", (int)id(polarity_a), (int)id(polarity_b));
+      # Drive H-bridge / relay outputs
+      - if:
+          condition:
+            lambda: return id(polarity_a);
+          then:
+            output.turn_on: clock_out_1
+          else:
+            output.turn_off: clock_out_1
+      - if:
+          condition:
+            lambda: return id(polarity_b);
+          then:
+            output.turn_on: clock_out_2
+          else:
+            output.turn_off: clock_out_2
+      # 1-second pulse width — adjust if your mechanism requires different timing
+      - delay: 1000ms
+      # Release both outputs
+      - output.turn_off: clock_out_1
+      - output.turn_off: clock_out_2
+      # Advance tracked clock face position by one pulse interval
+      - lambda: |-
+          id(clock_face_minutes) = (id(clock_face_minutes) + 1) % 720;
+          int h = id(clock_face_minutes) / 60;
+          int m = id(clock_face_minutes) % 60;
+          ESP_LOGI("clock", "Clock face now %02d:%02d", h, m);
+      # Brief gap between queued pulses to protect the mechanism
+      - delay: 500ms
+
+# ── MAIN CLOCK LOOP ───────────────────────────────────────────────────────────
+
+interval:
+  - interval: 2s
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (!now.is_valid()) {
+            ESP_LOGD("clock", "Waiting for valid time...");
+            return;
+          }
+          if (id(sync_paused)) {
+            ESP_LOGD("clock", "Auto-advance paused for sync");
+            return;
+          }
+          if (id(pulse_clock).is_running()) return;
+
+          // Real time expressed as minutes past 12:00 (12-hour clock)
+          int real_min = (now.hour % 12) * 60 + now.minute;
+          int clock_min = id(clock_face_minutes);
+
+          // Offset: minutes the clock face is behind real time
+          int offset = real_min - clock_min;
+          if (offset < 0) offset += 720;  // handle 12-hour wrap
+
+          // Advance if behind by 1–659 minutes.
+          // If offset >= 660 the clock is more than 1 hour ahead —
+          // do nothing and let real time catch up.
+          if (offset > 0 && offset <= 659) {
+            ESP_LOGI("clock", "Behind by %d min — pulsing", offset);
+            id(pulse_clock).execute();
+          }
+
+# ── HOME ASSISTANT ENTITIES ───────────────────────────────────────────────────
+
+# Read-only: current tracked clock face position
+text_sensor:
+  - platform: template
+    name: "Clock face position"
+    id: clock_face_display
+    lambda: |-
+      int h = id(clock_face_minutes) / 60;
+      int m = id(clock_face_minutes) % 60;
+      char buf[6];
+      snprintf(buf, sizeof(buf), "%02d:%02d", h, m);
+      return std::string(buf);
+    update_interval: 60s
+    icon: mdi:clock-outline
+
+# Writable: set what time the physical clock face is currently showing.
+# Moving either slider automatically pauses auto-advance. Press Synchronise
+# to confirm and resume.
+number:
+  - platform: template
+    name: "Clock face hour"
+    id: set_clock_hour
+    min_value: 0
+    max_value: 11
+    step: 1
+    unit_of_measurement: "h"
+    icon: mdi:clock-time-four
+    optimistic: true
+    initial_value: 0
+    set_action:
+      - lambda: |-
+          id(sync_paused) = true;
+          int h = (int)x;
+          int m = id(clock_face_minutes) % 60;
+          id(clock_face_minutes) = h * 60 + m;
+          ESP_LOGI("clock", "Clock face hour set to %d — auto-advance paused", h);
+
+  - platform: template
+    name: "Clock face minute"
+    id: set_clock_minute
+    min_value: 0
+    max_value: 59
+    step: 1
+    unit_of_measurement: "min"
+    icon: mdi:clock-time-four-outline
+    optimistic: true
+    initial_value: 0
+    set_action:
+      - lambda: |-
+          id(sync_paused) = true;
+          int h = id(clock_face_minutes) / 60;
+          int m = (int)x;
+          id(clock_face_minutes) = h * 60 + m;
+          ESP_LOGI("clock", "Clock face minute set to %d — auto-advance paused", m);
+
+# Pause switch — can also be toggled manually to stop auto-advance at any time
+switch:
+  - platform: template
+    name: "Pause auto-advance (sync mode)"
+    id: sync_pause_switch
+    icon: mdi:pause-circle-outline
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    turn_on_action:
+      - lambda: |-
+          id(sync_paused) = true;
+          ESP_LOGI("clock", "Auto-advance paused");
+    turn_off_action:
+      - lambda: |-
+          id(sync_paused) = false;
+          ESP_LOGI("clock", "Auto-advance resumed");
+
+button:
+  - platform: template
+    name: "Advance 1 minute"
+    icon: mdi:clock-plus
+    on_press:
+      script.execute: pulse_clock
+
+  - platform: template
+    name: "Advance 5 minutes"
+    icon: mdi:clock-fast
+    on_press:
+      - repeat:
+          count: 5
+          then:
+            - script.execute: pulse_clock
+
+  # Set clock face hour and minute above to match the physical face,
+  # then press this to confirm and resume auto-advance.
+  - platform: template
+    name: "Synchronise"
+    icon: mdi:sync
+    on_press:
+      - lambda: |-
+          id(sync_paused) = false;
+          auto now = id(ha_time).now();
+          if (!now.is_valid()) {
+            ESP_LOGW("clock", "Sync pressed but time not yet valid");
+            return;
+          }
+          ESP_LOGI("clock", "Sync confirmed. Real time %02d:%02d, clock face %02d:%02d.",
+            now.hour % 12, now.minute,
+            id(clock_face_minutes) / 60, id(clock_face_minutes) % 60);
+      - switch.turn_off: sync_pause_switch
+      - light.turn_on: status_led
+      - delay: 200ms
+      - light.turn_off: status_led
