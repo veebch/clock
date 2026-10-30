@@ -4,6 +4,8 @@ An alternative to the Pico W `webtime.py` version, using an [ESP32](https://www.
 
 The H-bridge or relay wiring is identical to the Pico version. Only the microcontroller changes.
 
+> Keeping the Pico W (or running a VEEB Clock Driver)? See the [Pico W / ESPHome port](pico-w/README.md).
+
 ## Hardware
 
 - Any ESP32 DevKit board with an ESP32-WROOM-32 or equivalent module (the standard 38-pin DevKit C works well)
