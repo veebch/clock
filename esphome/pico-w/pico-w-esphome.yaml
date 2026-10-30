@@ -17,7 +17,9 @@ substitutions:
   friendly_name: VEEB Clock
   # IANA time zone, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
   timezone: Europe/Zurich
-  pulse_width_default: "400"   # ms; the stock veeb main.py used 0.4 s
+  # ms. 1000 matches webtime.py, main.py and the ESP32 port; the VEEB Clock Driver's
+  # shipped firmware uses 400.
+  pulse_width_default: "1000"
   pulse_gap: 300ms             # rest between back-to-back pulses while catching up
   ntp_default: pool.ntp.org    # default time server; changeable at runtime
 
@@ -96,8 +98,10 @@ ota:
     on_error:
       - lambda: veeb_clock::g_ota_active = false;
 
-# LAN controls, no login (add `auth:` if your network needs it). ota: false: the page's /update would take unauthenticated
-# plaintext firmware; uploads go through the encrypted ESPHome OTA only.
+# LAN controls, no login (add `auth:` if your network needs it). ota: false: the page
+# doesn't take firmware uploads on the LAN, only the encrypted ESPHome OTA does. ESPHome
+# still accepts one through the captive portal while the fallback hotspot is up (its
+# recovery path, protected by fallback_ap_password); that path skips ota.on_begin.
 web_server:
   port: 80
   version: 3
@@ -127,7 +131,7 @@ text:
     mode: text
     min_length: 1
     max_length: 63
-    pattern: "^[A-Za-z0-9.:-]+$"   # frontend hint only; the device re-checks
+    pattern: "^[A-Za-z0-9.-]+$"    # hostname or IPv4; frontend hint only, the device re-checks
     update_interval: never
     lambda: return std::string(veeb_clock::g_ntp_server);
     set_action:
@@ -197,8 +201,9 @@ output:
     id: out_b
     pin: GPIO14
 
-# The Pico W's LED hangs off the CYW43 Wi-Fi chip (virtual pin 64). Blinks while
-# Wi-Fi or the API is down (or on an error), off when healthy.
+# The Pico W's LED hangs off the CYW43 Wi-Fi chip (virtual pin 64). Blinks while Wi-Fi
+# is down, on an error, and also whenever no API client (Home Assistant) is connected;
+# remove this block if you use the web page only.
 status_led:
   pin: 64
 

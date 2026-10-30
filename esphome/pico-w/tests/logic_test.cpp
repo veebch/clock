@@ -37,13 +37,13 @@ int main() {
   CHECK(pulses_needed(659, 0) == 659);
   CHECK(pulses_needed(660, 0) == 0);
 
-  // Spring forward (01:00 GMT -> 02:00 BST): face 00:59, real 02:00 -> 61 pulses.
-  CHECK(pulses_needed(dial_minutes(2, 0), dial_minutes(0, 59)) == 61);
-  // Autumn (02:00 BST -> 01:00 GMT): face 02:00, real 01:00 -> wait the whole hour...
+  // Spring forward (local 01:59 -> 03:00, an hour skipped): face 01:59, real 03:00 -> 61.
+  CHECK(pulses_needed(dial_minutes(3, 0), dial_minutes(1, 59)) == 61);
+  // Autumn (local 03:00 -> 02:00, an hour repeated): face 03:00, real 02:xx -> wait...
   for (int m = 0; m < 60; m++)
-    CHECK(pulses_needed(dial_minutes(1, m), dial_minutes(2, 0)) == 0);
-  // ...and resume at 02:01.
-  CHECK(pulses_needed(dial_minutes(2, 1), dial_minutes(2, 0)) == 1);
+    CHECK(pulses_needed(dial_minutes(2, m), dial_minutes(3, 0)) == 0);
+  // ...and resume at 03:01.
+  CHECK(pulses_needed(dial_minutes(3, 1), dial_minutes(3, 0)) == 1);
 
   // Record round trip and corruption detection.
   State s;

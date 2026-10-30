@@ -5,10 +5,11 @@
 // re-running that sequence from the main loop swaps the server at runtime.
 //
 // The chosen server goes into BOTH lwIP slots (arduino-pico builds lwIP with
-// SNTP_MAX_SERVERS 2). lwIP never moves back to slot 0 once a timeout has moved it to
-// slot 1, and sntp_stop()/sntp_init() keep that index, so a different server in slot 1
-// would silently become the only one used, and changing slot 0 would then do nothing.
-// To use the public pool, set it as the server.
+// SNTP_MAX_SERVERS 2). After a timeout lwIP moves to the next slot and stays there for as
+// long as it answers (sntp_stop()/sntp_init() keep the index), so a different server in
+// slot 1 would quietly take over, and changing slot 0 would then do nothing. With the
+// same name in both, a timeout just re-resolves it (a fresh pool address, for a pool).
+// IPv6 is not enabled on rp2 by default, so names must be hostnames or IPv4 addresses.
 //
 // The name is kept in LittleFS next to the clock state, not in a `restore_value` text
 // entity: template text saves whatever it is sent before any check can run, and its
@@ -31,13 +32,13 @@ static const char *const kNtpFile = "/veeb/ntp.txt";
 // lwIP keeps the pointer, not a copy, so the name must outlive the call.
 inline char g_ntp_server[64];
 
-// Hostname, IPv4 or IPv6 literal: [A-Za-z0-9.:-], 1..63 chars, no leading/trailing '.'/'-'.
+// Hostname or IPv4 address: [A-Za-z0-9.-], 1..63 chars, no leading/trailing '.'/'-'.
 inline bool valid_ntp_server(const std::string &s) {
   if (s.empty() || s.size() >= sizeof(g_ntp_server))
     return false;
   for (char c : s) {
     bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-              c == '.' || c == '-' || c == ':';
+              c == '.' || c == '-';
     if (!ok)
       return false;
   }
@@ -85,7 +86,7 @@ inline void ntp_boot(const char *fallback) {
 // From the entity: validate, save, apply. Returns false (and changes nothing) if invalid.
 inline bool ntp_set(const std::string &name) {
   if (!valid_ntp_server(name)) {
-    ESP_LOGW(NTP_TAG, "Rejected time server '%s' (hostname or IP address only)", name.c_str());
+    ESP_LOGW(NTP_TAG, "Rejected time server '%s' (hostname or IPv4 address only)", name.c_str());
     return false;
   }
   File f = LittleFS.open(kNtpFile, "w");
