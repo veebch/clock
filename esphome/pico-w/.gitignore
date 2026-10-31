@@ -1,0 +1,3 @@
+secrets.yaml
+.esphome/
+tests/logic_test

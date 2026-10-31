@@ -1,0 +1,422 @@
+################################################################################
+# Raspberry Pi Pico W / ESPHome port of veebch/clock
+#
+# Drives a polarity-reversing secondary clock (Inducta / Favag / Moser-Baer style):
+# one pulse per minute, polarity alternating, on GP13 (A) and GP14 (B) into an
+# H-bridge or relay pair, exactly like webtime.py and the ESP32 port. Runs on the
+# VEEB Clock Driver as shipped (a Pico W) and on a DIY Pico W build per the main
+# README's schematic.
+#
+# Setup and the reasons behind the design are in README.md next to this file.
+# State (hand position, last polarity, running, confirmed) lives in LittleFS, NOT in
+# ESPHome preferences: see veeb_clock_store.h for why.
+################################################################################
+
+substitutions:
+  name: veeb-clock
+  friendly_name: VEEB Clock
+  # IANA time zone, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  timezone: Europe/Zurich
+  # ms. 1000 matches webtime.py, main.py and the ESP32 port; the VEEB Clock Driver's
+  # shipped firmware uses 400.
+  pulse_width_default: "1000"
+  pulse_gap: 300ms             # rest between back-to-back pulses while catching up
+  ntp_default: pool.ntp.org    # default time server; changeable at runtime
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: Secondary clock driver (veebch/clock, Pico W ESPHome port)
+  includes:
+    - veeb_clock_logic.h
+    - veeb_clock_store.h
+    - veeb_clock_ntp.h
+  on_boot:
+    # After everything (sntp has set its compiled servers): apply the saved time server.
+    - priority: -100
+      then:
+        - lambda: |-
+            if (id(store_ok)) veeb_clock::ntp_boot("${ntp_default}");
+            else veeb_clock::apply_ntp_server("${ntp_default}");
+            id(time_server).publish_state(veeb_clock::g_ntp_server);
+    # Before Wi-Fi: restore where the hands are. Nothing pulses until time is valid.
+    - priority: 800
+      then:
+        - lambda: |-
+            if (!veeb_clock::store_begin()) {
+              id(store_ok) = false;
+              return;
+            }
+            veeb_clock::State s;
+            if (veeb_clock::store_load(s)) {
+              veeb_clock::g_state = s;
+              ESP_LOGI("veeb_clock", "Restored: face %02d:%02d, last A=%d, running=%d, confirmed=%d, seq %u",
+                       s.face / 60, s.face % 60, s.last_a, s.running, s.confirmed, (unsigned) s.seq);
+            } else {
+              // First boot (or unreadable record): stay paused until the owner enters
+              // the time on the face and presses Synchronise.
+              ESP_LOGW("veeb_clock", "No saved state: waiting for the face time to be set");
+            }
+
+rp2:
+  board: rpipicow
+
+logger:
+  level: INFO
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "VEEB Clock Fallback"
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+  # The default (15 min) reboots whenever no client is connected: with no RTC, a reboot
+  # during an HA or network outage loses the time and stops the hands for the rest of it,
+  # and every boot erases the ESPHome preferences sector twice (safe_mode counter).
+  reboot_timeout: 0s
+
+# OTA reuses the API's encryption key (one secret, no separate OTA password).
+# The upload's data phase blocks the main loop, so a pulse caught by it would keep the
+# coil energised for the whole upload: stop it first and send no new ones. Stopping a
+# pulse before it is recorded is the same case as a power cut mid-pulse (safe; see README.md).
+ota:
+  - platform: esphome
+    encryption: {}
+    on_begin:
+      - script.stop: pulse
+      - output.turn_off: out_a
+      - output.turn_off: out_b
+      - lambda: |-
+          veeb_clock::g_ota_active = true;
+          veeb_clock::g_in_flight = false;
+    on_error:
+      - lambda: veeb_clock::g_ota_active = false;
+
+# LAN controls, no login (add `auth:` if your network needs it). ota: false: the page
+# doesn't take firmware uploads on the LAN, only the encrypted ESPHome OTA does. ESPHome
+# still accepts one through the captive portal while the fallback hotspot is up (its
+# recovery path, protected by fallback_ap_password); that path skips ota.on_begin.
+web_server:
+  port: 80
+  version: 3
+  ota: false
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: ${timezone}
+    # lwIP polls hourly by itself (SNTP_UPDATE_DELAY). ESPHome's update() restarts the
+    # client (clearing lwIP's reachability, and without the lwIP lock), so do it daily
+    # rather than every 15 min.
+    update_interval: 24h
+    # Replaced at boot by the "Time server" entity, in both lwIP slots (veeb_clock_ntp.h
+    # explains why there is no pool fallback).
+    servers:
+      - ${ntp_default}
+
+text:
+  # Primary NTP server, hostname or IP. Validated and saved on the device
+  # (veeb_clock_ntp.h); an invalid value is rejected and the entity snaps back.
+  - platform: template
+    id: time_server
+    name: Time server
+    icon: mdi:server-network
+    entity_category: config
+    mode: text
+    min_length: 1
+    max_length: 63
+    pattern: "^[A-Za-z0-9.-]+$"    # hostname or IPv4; frontend hint only, the device re-checks
+    update_interval: never
+    lambda: return std::string(veeb_clock::g_ntp_server);
+    set_action:
+      - lambda: |-
+          veeb_clock::ntp_set(x);
+          id(time_server).publish_state(veeb_clock::g_ntp_server);
+
+# The hands' position as one time picker (seconds ignored). Setting it pauses
+# auto-advance until Synchronise, so a half-entered time never sends pulses.
+# If a pulse is energised right now, we can't know whether the owner read the hands
+# before or after its step, so the value is refused: that pulse finishes and records
+# itself, the queued ones are cancelled, and the owner re-reads and sets it again.
+datetime:
+  - platform: template
+    id: face_time
+    type: time
+    name: Face time
+    icon: mdi:clock-edit-outline
+    update_interval: 5s
+    lambda: |-
+      ESPTime t{};
+      t.hour = veeb_clock::g_state.face / 60;
+      t.minute = veeb_clock::g_state.face % 60;
+      t.second = 0;
+      return t;
+    set_action:
+      - if:
+          condition:
+            lambda: return veeb_clock::g_in_flight;
+          then:
+            - lambda: |-
+                veeb_clock::g_cancel_queued = true;
+                veeb_clock::g_state.running = false;  // saved by that pulse's own record
+                ESP_LOGW("veeb_clock", "Face time refused: a pulse was in progress. "
+                         "Read the hands again and set Face time again");
+                id(face_time).update();  // snap the entity back
+          else:
+            # Nothing energised: stopping the script only drops queued pulses (and the
+            # rest after a recorded one), so the record stays true to the hands.
+            - script.stop: pulse
+            - lambda: |-
+                auto &s = veeb_clock::g_state;
+                veeb_clock::g_cancel_queued = false;
+                s.face = uint16_t(veeb_clock::dial_minutes(x.hour, x.minute));
+                s.running = false;
+                s.confirmed = true;
+                if (!veeb_clock::store_save(s)) id(store_ok) = false;
+                ESP_LOGI("veeb_clock", "Face set to %02d:%02d, paused until Synchronise",
+                         s.face / 60, s.face % 60);
+
+# Hand position etc. is veeb_clock::g_state (veeb_clock_store.h), persisted in LittleFS.
+globals:
+  - id: store_ok
+    type: bool
+    restore_value: false
+    initial_value: "true"
+  - id: store_retry_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+
+output:
+  - platform: gpio
+    id: out_a
+    pin: GPIO13
+  - platform: gpio
+    id: out_b
+    pin: GPIO14
+
+# The Pico W's LED hangs off the CYW43 Wi-Fi chip (virtual pin 64). Blinks while Wi-Fi
+# is down, on an error, and also whenever no API client (Home Assistant) is connected;
+# remove this block if you use the web page only.
+status_led:
+  pin: 64
+
+number:
+  - platform: template
+    id: pulse_width
+    name: Pulse width
+    icon: mdi:pulse
+    entity_category: config
+    unit_of_measurement: ms
+    min_value: 100
+    max_value: 2000
+    step: 50
+    mode: box
+    optimistic: true
+    restore_value: true   # rare writes: only when changed
+    initial_value: ${pulse_width_default}
+
+script:
+  - id: pulse
+    mode: queued
+    max_runs: 10
+    then:
+      # No pulse that could not be recorded: with storage failing, the record would fall
+      # behind the hands and they would end up fast after the next reboot.
+      - lambda: |-
+          if (!id(store_ok) || veeb_clock::g_ota_active || veeb_clock::g_cancel_queued) {
+            ESP_LOGW("veeb_clock", "Pulse skipped (%s)",
+                     !id(store_ok) ? "storage error" : veeb_clock::g_ota_active ? "OTA running" : "cancelled");
+            return;
+          }
+          bool a = !veeb_clock::g_state.last_a;
+          ESP_LOGD("veeb_clock", "Pulse A=%d B=%d", a, !a);
+          if (a) { id(out_a).turn_on(); id(out_b).turn_off(); }
+          else   { id(out_a).turn_off(); id(out_b).turn_on(); }
+          veeb_clock::g_in_flight = true;
+      - delay: !lambda return (uint32_t) id(pulse_width).state;
+      - output.turn_off: out_a
+      - output.turn_off: out_b
+      # Record only after the pulse. If power dies mid-pulse, the next boot repeats the
+      # same polarity, which a reversing movement ignores if it already stepped.
+      - lambda: |-
+          if (!veeb_clock::g_in_flight) return;
+          veeb_clock::g_in_flight = false;
+          auto &s = veeb_clock::g_state;
+          s.last_a = !s.last_a;
+          s.face = uint16_t((s.face + 1) % veeb_clock::kDialMinutes);
+          if (!veeb_clock::store_save(s)) id(store_ok) = false;
+          ESP_LOGI("veeb_clock", "Face now %02d:%02d", s.face / 60, s.face % 60);
+      - delay: ${pulse_gap}
+
+  # Synchronise / Auto-advance on. Refused until the face time has been entered once
+  # (a fresh record's 12:00 is a default, not a reading), and while a pulse is energised.
+  # Otherwise any queued manual pulses are dropped (is_running() can't see them between
+  # two queued runs), so auto-advance starts from the record as it stands.
+  - id: start_running
+    then:
+      - lambda: |-
+          auto &s = veeb_clock::g_state;
+          if (!s.confirmed) {
+            ESP_LOGW("veeb_clock", "Set Face time first: the face position is not confirmed");
+          } else if (veeb_clock::g_in_flight) {
+            ESP_LOGW("veeb_clock", "A pulse is in progress: try again in a moment");
+          } else {
+            id(pulse).stop();
+            veeb_clock::g_cancel_queued = false;
+            s.running = true;
+            if (!veeb_clock::store_save(s)) id(store_ok) = false;
+            ESP_LOGI("veeb_clock", "Synchronised from face %02d:%02d, auto-advance on",
+                     s.face / 60, s.face % 60);
+          }
+
+interval:
+  - interval: 250ms
+    then:
+      - lambda: |-
+          // Storage failed: keep the in-memory record (it matches the hands) and retry
+          // saving it every 30 s; no pulses until it is on flash.
+          if (!id(store_ok)) {
+            if (millis() - id(store_retry_ms) < 30000) return;
+            id(store_retry_ms) = millis();
+            if (veeb_clock::store_begin() && veeb_clock::store_save(veeb_clock::g_state)) {
+              id(store_ok) = true;
+              ESP_LOGW("veeb_clock", "Storage recovered");
+            }
+            return;
+          }
+          auto &s = veeb_clock::g_state;
+          if (!s.running || !s.confirmed || veeb_clock::g_ota_active || veeb_clock::g_in_flight ||
+              id(pulse).is_running())
+            return;
+          auto now = id(sntp_time).now();
+          if (!now.is_valid())
+            return;
+          int need = veeb_clock::pulses_needed(veeb_clock::dial_minutes(now.hour, now.minute),
+                                               veeb_clock::g_state.face);
+          if (need > 0)
+            id(pulse).execute();
+
+button:
+  - platform: template
+    name: Synchronise
+    icon: mdi:sync
+    on_press:
+      - script.execute: start_running
+  # Manual steps only while paused: while running, the loop owns the hands, and an extra
+  # pulse there would push the record ahead without fixing a lagging face (set Face
+  # time instead).
+  - platform: template
+    name: Advance 1 minute
+    icon: mdi:clock-plus
+    on_press:
+      - if:
+          condition:
+            lambda: return veeb_clock::g_state.running;
+          then:
+            - logger.log: { level: WARN, format: "Advance ignored: pause auto-advance first" }
+          else:
+            - lambda: veeb_clock::g_cancel_queued = false;
+            - script.execute: pulse
+  - platform: template
+    name: Advance 5 minutes
+    icon: mdi:clock-fast
+    on_press:
+      - if:
+          condition:
+            lambda: return veeb_clock::g_state.running;
+          then:
+            - logger.log: { level: WARN, format: "Advance ignored: pause auto-advance first" }
+          else:
+            - lambda: veeb_clock::g_cancel_queued = false;
+            - repeat:
+                count: 5
+                then:
+                  - script.execute: pulse
+  - platform: restart
+    name: Restart
+    entity_category: diagnostic
+
+switch:
+  - platform: template
+    name: Auto-advance
+    icon: mdi:play-pause
+    # DISABLED: the default ALWAYS_OFF would run turn_off_action (and save "paused")
+    # on every boot. The state comes from the LittleFS record via the lambda.
+    restore_mode: DISABLED
+    lambda: return veeb_clock::g_state.running;
+    turn_on_action:
+      - script.execute: start_running
+    turn_off_action:
+      - lambda: |-
+          veeb_clock::g_state.running = false;
+          if (!veeb_clock::store_save(veeb_clock::g_state)) id(store_ok) = false;
+          ESP_LOGI("veeb_clock", "Auto-advance off");
+
+text_sensor:
+  - platform: template
+    name: Face position
+    icon: mdi:clock-outline
+    update_interval: 10s
+    lambda: |-
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%02d:%02d", veeb_clock::g_state.face / 60, veeb_clock::g_state.face % 60);
+      return std::string(buf);
+  - platform: template
+    name: Device time
+    icon: mdi:clock-check-outline
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      auto now = id(sntp_time).now();
+      return now.is_valid() ? now.strftime("%Y-%m-%d %H:%M:%S %Z") : std::string("not set");
+  - platform: template
+    name: State
+    icon: mdi:information-outline
+    entity_category: diagnostic
+    update_interval: 10s
+    lambda: |-
+      if (!id(store_ok)) return std::string("storage error (retrying every 30 s)");
+      if (veeb_clock::g_ota_active) return std::string("OTA update");
+      if (!veeb_clock::g_state.confirmed) return std::string("paused: set Face time, then Synchronise");
+      if (!veeb_clock::g_state.running) return std::string("paused");
+      auto now = id(sntp_time).now();
+      if (!now.is_valid()) return std::string("waiting for time");
+      int need = veeb_clock::pulses_needed(veeb_clock::dial_minutes(now.hour, now.minute),
+                                           veeb_clock::g_state.face);
+      if (need > 0) return std::string("catching up");
+      int real = veeb_clock::dial_minutes(now.hour, now.minute);
+      return std::string(real == veeb_clock::g_state.face ? "running" : "waiting (face ahead)");
+
+sensor:
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    update_interval: 60s
+  - platform: uptime
+    name: Uptime
+    update_interval: 60s
+  # How many of the last 8 SNTP polls (hourly, so ~8 h) the time server answered, from
+  # lwIP's reachability register. It restarts from 0 at boot, on a Time server change
+  # and at the daily SNTP restart. 0 for long = coasting on the crystal.
+  - platform: template
+    name: Time server replies
+    icon: mdi:server-network
+    entity_category: diagnostic
+    accuracy_decimals: 0
+    update_interval: 60s
+    lambda: return __builtin_popcount(veeb_clock::ntp_reachability());
+
+# The small button on the VEEB Clock Driver board is on GP0 (internal pull-up). It is
+# reported as a sensor only, with no action: see README.md.
+binary_sensor:
+  - platform: gpio
+    name: Board button (GP0)
+    entity_category: diagnostic
+    pin: { number: GPIO0, mode: { input: true, pullup: true }, inverted: true }
+    filters: [delayed_on: 50ms]
